@@ -40,6 +40,11 @@ body {
   padding: 1.1rem;
 }
 
+.header {
+  display: grid;
+  gap: 0.2rem;
+}
+
 .header h1 {
   margin: 0;
   font-size: clamp(1.8rem, 2.2vw, 2.4rem);
@@ -642,6 +647,23 @@ button:focus-visible {
 }
 
 @media (max-width: 760px) {
+  .app {
+    padding: 0.7rem;
+  }
+
+  .header h1 {
+    font-size: clamp(1.38rem, 7vw, 1.72rem);
+  }
+
+  .subtitle {
+    margin-bottom: 0.7rem;
+    font-size: 0.94rem;
+  }
+
+  button {
+    min-height: 42px;
+  }
+
   .board-surface {
     grid-template-columns: 1fr 52px 1fr;
     grid-template-rows: minmax(128px, 1fr) clamp(44px, 10vw, 58px) minmax(128px, 1fr);
@@ -732,3 +754,158 @@ button:focus-visible {
   }
 
 }
+
+@media (max-width: 560px) {
+  :root {
+    --board-center-gap: 44px;
+    --stack-edge-gap: 0.04rem;
+  }
+
+  .app {
+    padding: 0.5rem;
+  }
+
+  .status {
+    padding: 0.65rem;
+    gap: 0.55rem;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .controls button {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .dice-panel {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .die {
+    width: 40px;
+    height: 40px;
+  }
+
+  .board-shell {
+    gap: 0.55rem;
+  }
+
+  .board-surface {
+    grid-template-columns: 1fr 42px 1fr;
+    grid-template-rows: minmax(104px, 1fr) var(--board-center-gap) minmax(104px, 1fr);
+    padding: 0.33rem;
+    border-width: 2px;
+    border-radius: 0.78rem;
+  }
+
+  .point-band {
+    gap: 0.16rem;
+  }
+
+  .point {
+    min-height: clamp(92px, 24vw, 118px);
+  }
+
+  .point::before {
+    width: 94%;
+  }
+
+  .bar-title {
+    font-size: 0.58rem;
+  }
+
+  .bar-counts {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    font-size: 0.66rem;
+  }
+
+  .bar-lanes {
+    min-height: 100px;
+  }
+
+  .bar-lane {
+    min-height: 44px;
+  }
+
+  .bar-checker {
+    width: clamp(13px, 3.2vw, 18px);
+    height: clamp(13px, 3.2vw, 18px);
+  }
+
+  .checker {
+    --checker-size: clamp(14px, 4.6vw, 22px);
+    border-width: 1.5px;
+  }
+
+  .tray-label {
+    font-size: 0.72rem;
+  }
+
+  .tray-count {
+    font-size: clamp(1.2rem, 4.8vw, 1.55rem);
+  }
+
+  .board-dice-overlay {
+    top: 50%;
+    left: 76%;
+    gap: 0.28rem;
+  }
+
+  .board-die-perspective {
+    width: 30px;
+    height: 30px;
+  }
+
+  .board-face-pip {
+    width: 4px;
+    height: 4px;
+  }
+
+  .board-die-front {
+    transform: rotateY(0deg) translateZ(15px);
+  }
+
+  .board-die-back {
+    transform: rotateY(180deg) translateZ(15px);
+  }
+
+  .board-die-right {
+    transform: rotateY(90deg) translateZ(15px);
+  }
+
+  .board-die-left {
+    transform: rotateY(-90deg) translateZ(15px);
+  }
+
+  .board-die-top {
+    transform: rotateX(90deg) translateZ(15px);
+  }
+
+  .board-die-bottom {
+    transform: rotateX(-90deg) translateZ(15px);
+  }
+}
+
+@media (max-width: 420px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .home-rail {
+    gap: 0.45rem;
+  }
+
+  .bearoff-tray,
+  .home-rail .bearoff-tray {
+    min-height: 74px;
+  }
+}
+
