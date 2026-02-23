@@ -438,6 +438,19 @@ button:focus-visible {
   pointer-events: auto;
 }
 
+.bar-zone-forced {
+  background: linear-gradient(180deg, rgba(35, 136, 255, 0.12), rgba(35, 136, 255, 0));
+}
+
+.bar-stack-selected {
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 3px var(--selected-outline) inset,
+    0 0 12px 1px var(--selected-glow);
+  transform: translateY(-2px) scale(1.01);
+  transition: transform 150ms ease-out;
+}
+
 .point {
   position: relative;
   border: none;
@@ -582,8 +595,6 @@ button:focus-visible {
 
 .point.selected.legal,
 .point.is-selected.is-legal,
-.bar-column.selected.legal,
-.bar-column.is-selected.is-legal,
 .bearoff-tray.selected.legal,
 .bearoff-tray.is-selected.is-legal {
   box-shadow:
@@ -593,7 +604,8 @@ button:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .point.selected .checker-stack,
-  .point.is-selected .checker-stack {
+  .point.is-selected .checker-stack,
+  .bar-stack-selected {
     transition: none;
     transform: none;
     will-change: auto;
