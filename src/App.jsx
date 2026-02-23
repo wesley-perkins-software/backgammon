@@ -207,7 +207,7 @@ function BoardDice({ game, diceAnimKey }) {
   );
 }
 
-function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }) {
+function Point({ index, value, selected, highlighted, movable, onClick, isTop, pointRef }) {
   const owner = pointOwner(value);
   const count = checkerCount(value);
   const stackDivisor = Math.max(4, count - 1);
@@ -215,7 +215,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   return (
     <button
       ref={pointRef}
-      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
+      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
       onClick={onClick}
       aria-label={`Point ${index + 1}`}
       type="button"
@@ -224,7 +224,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
         {Array.from({ length: count }).map((_, i) => (
           <span
             key={i}
-            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'}`}
+            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movable && i === count - 1 ? 'checker-movable' : ''}`}
             style={{
               '--stack-index': i,
               '--stack-offset': i / stackDivisor,
@@ -237,7 +237,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   );
 }
 
-function Bar({ state, selected, highlighted, onClick, barRef }) {
+function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
   const visibleA = Math.min(aCount, 5);
@@ -246,7 +246,7 @@ function Bar({ state, selected, highlighted, onClick, barRef }) {
   return (
     <button
       ref={barRef}
-      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
+      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
       onClick={onClick}
       type="button"
       aria-label="Bar"
@@ -362,6 +362,16 @@ export default function App() {
     }
     return set;
   }, [moveOptionsForSelected]);
+
+  const movableSourceSet = useMemo(() => {
+    const set = new Set();
+    for (const move of legalMoves) {
+      set.add(sourceKey(move.from));
+    }
+    return set;
+  }, [legalMoves]);
+
+  const showMovableSources = !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
@@ -718,6 +728,7 @@ export default function App() {
         }}
         selected={selectedSource === point}
         highlighted={destinationSet.has(String(point))}
+        movable={showMovableSources && movableSourceSet.has(String(point))}
         onClick={() => {
           if (isAnimatingMove || isComputerTurn) {
             return;
@@ -766,6 +777,7 @@ export default function App() {
               state={game}
               selected={selectedSource === 'bar'}
               highlighted={destinationSet.has('bar')}
+              movable={showMovableSources && movableSourceSet.has('bar')}
               onClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
