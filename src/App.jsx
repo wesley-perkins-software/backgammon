@@ -22,6 +22,7 @@ const BOTTOM_LEFT = [11, 10, 9, 8, 7, 6];
 const BOTTOM_RIGHT = [5, 4, 3, 2, 1, 0];
 const MOVE_STEP_MS = 210;
 const MOVE_START_DELAY_MS = 40;
+const BOARD_DICE_ROLL_MS = 1000;
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -109,7 +110,11 @@ function DieFace({ value, animateKey, className = '', ariaHidden = false, used =
   );
 }
 
-function DicePanel({ game, diceAnimKey }) {
+function DicePanel({ game, diceAnimKey, isBoardDiceRolling }) {
+  if (isBoardDiceRolling) {
+    return <div className="dice-panel" aria-label="Dice" />;
+  }
+
   const remainingCounts = {};
   for (const die of game.dice.remaining) {
     remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
@@ -298,12 +303,14 @@ export default function App() {
   const [game, setGame] = useState(loadInitial);
   const [selectedSource, setSelectedSource] = useState(null);
   const [diceAnimKey, setDiceAnimKey] = useState(0);
+  const [isBoardDiceRolling, setIsBoardDiceRolling] = useState(false);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
   const bearOffRefs = useRef({ A: null, B: null });
+  const boardDiceRollTimerRef = useRef(null);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
@@ -382,10 +389,32 @@ export default function App() {
 
   const diceSignature = game.dice.values.join('-');
   useEffect(() => {
-    if (game.dice.values.length === 2) {
-      setDiceAnimKey((k) => k + 2);
+    if (boardDiceRollTimerRef.current) {
+      window.clearTimeout(boardDiceRollTimerRef.current);
+      boardDiceRollTimerRef.current = null;
     }
+
+    if (game.dice.values.length === 2) {
+      setIsBoardDiceRolling(true);
+      setDiceAnimKey((k) => k + 2);
+      boardDiceRollTimerRef.current = window.setTimeout(() => {
+        setIsBoardDiceRolling(false);
+        boardDiceRollTimerRef.current = null;
+      }, BOARD_DICE_ROLL_MS);
+      return undefined;
+    }
+
+    setIsBoardDiceRolling(false);
+    return undefined;
   }, [diceSignature]);
+
+  useEffect(() => {
+    return () => {
+      if (boardDiceRollTimerRef.current) {
+        window.clearTimeout(boardDiceRollTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (game.winner || !isComputerTurn) {
@@ -710,7 +739,7 @@ export default function App() {
       <section className="status" aria-live="polite">
         <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
         <div><strong>Action:</strong> {statusText}</div>
-        <DicePanel game={game} diceAnimKey={diceAnimKey} />
+        <DicePanel game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
       </section>
 
       <section className="controls" aria-label="Game controls">
