@@ -359,13 +359,10 @@ button:focus-visible {
 
 .bar-column {
   border-radius: 2px;
-  border: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 246, 225, 0.16), rgba(0, 0, 0, 0.08)),
-    linear-gradient(180deg, #8f6649, #78533a);
-  box-shadow:
-    inset 1px 0 0 rgba(255, 236, 206, 0.2),
-    inset -1px 0 0 rgba(58, 35, 22, 0.28);
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent;
   color: #f8ecd6;
   position: relative;
 }
@@ -374,7 +371,12 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 239, 210, 0.06), rgba(0, 0, 0, 0.06));
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 220, 0.14), rgba(0, 0, 0, 0.08)),
+    linear-gradient(180deg, #8d6347, #745037);
 }
 
 .bar-checker-overlay {
@@ -384,71 +386,61 @@ button:focus-visible {
   bottom: 0;
   transform: translateX(-50%);
   width: clamp(44px, 8vw, 56px);
-  display: grid;
-  grid-template-rows: 1fr 1fr;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   pointer-events: none;
 }
 
-.bar-zone {
+.barStackTop,
+.barStackBottom {
   position: relative;
-  overflow: visible;
-  min-height: 0;
-}
-
-.bar-zone::before {
-  content: '';
-  position: absolute;
   left: 50%;
-  width: 84%;
-  height: 20px;
   transform: translateX(-50%);
-  border-radius: 999px;
+  width: 100%;
+  display: flex;
+  align-items: center;
   pointer-events: none;
 }
 
-.barTop::before {
-  top: 3px;
-  background: radial-gradient(ellipse at center, rgba(44, 27, 17, 0.14), rgba(44, 27, 17, 0));
+.barStackTop {
+  position: absolute;
+  top: 6px;
+  flex-direction: column;
 }
 
-.barBottom::before {
-  bottom: 3px;
-  background: radial-gradient(ellipse at center, rgba(44, 27, 17, 0.14), rgba(44, 27, 17, 0));
+.barStackBottom {
+  position: absolute;
+  bottom: 6px;
+  flex-direction: column-reverse;
 }
 
-.bar-stack {
-  left: 0;
-  right: 0;
-  top: var(--stack-edge-gap);
-  bottom: var(--stack-edge-gap);
+.barStackTop .bar-checker + .bar-checker {
+  margin-top: calc(var(--checker-size) * -0.56);
 }
 
-.bar-stack-top .stack-checker {
-  top: calc(var(--stack-offset) * (100% - var(--checker-size)));
-}
-
-.bar-stack-bottom .stack-checker {
-  bottom: calc(var(--stack-offset) * (100% - var(--checker-size)));
+.barStackBottom .bar-checker + .bar-checker {
+  margin-bottom: calc(var(--checker-size) * -0.56);
 }
 
 .bar-checker {
-  transform: translateX(-50%) scale(0.9);
+  transform: scale(0.9);
   transform-origin: center;
   z-index: 3;
   pointer-events: auto;
 }
 
-.bar-zone-forced {
-  background: linear-gradient(180deg, rgba(35, 136, 255, 0.12), rgba(35, 136, 255, 0));
+.barForcedSelected .bar-checker:first-child {
+  transform: translateY(-2px) scale(0.93);
 }
 
-.bar-stack-selected {
-  border-radius: 999px;
+.barCheckerSelected {
   box-shadow:
-    0 0 0 3px var(--selected-outline) inset,
-    0 0 12px 1px var(--selected-glow);
-  transform: translateY(-2px) scale(1.01);
-  transition: transform 150ms ease-out;
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(35, 136, 255, 0.9),
+    0 0 12px 2px rgba(35, 136, 255, 0.42);
 }
 
 .point {
@@ -605,7 +597,7 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .point.selected .checker-stack,
   .point.is-selected .checker-stack,
-  .bar-stack-selected {
+  .barForcedSelected .bar-checker:first-child {
     transition: none;
     transform: none;
     will-change: auto;

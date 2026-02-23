@@ -240,8 +240,6 @@ function Point({ index, value, selected, highlighted, movable, onClick, isTop, p
 function Bar({ state, playerStackSelected, highlighted, movable, onClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
-  const aStackDivisor = Math.max(4, aCount - 1);
-  const bStackDivisor = Math.max(4, bCount - 1);
 
   return (
     <div className="bar-lane-wrap">
@@ -256,36 +254,24 @@ function Bar({ state, playerStackSelected, highlighted, movable, onClick, barRef
       </button>
 
       <div className="bar-checker-overlay" aria-hidden="true">
-        <div className="bar-zone barTop">
-          <div className="checker-stack bar-stack bar-stack-top">
-            {Array.from({ length: bCount }).map((_, i) => (
-              <span
-                key={`b-${i}`}
-                className="checker checker-b stack-checker bar-checker"
-                style={{
-                  '--stack-index': i,
-                  '--stack-offset': i / bStackDivisor,
-                  zIndex: bCount - i
-                }}
-              />
-            ))}
-          </div>
+        <div className="barStackTop" aria-hidden="true">
+          {Array.from({ length: bCount }).map((_, i) => (
+            <span
+              key={`b-${i}`}
+              className="checker checker-b bar-checker"
+              style={{ zIndex: bCount - i }}
+            />
+          ))}
         </div>
 
-        <div className={`bar-zone barBottom ${playerStackSelected ? 'bar-zone-forced' : ''}`}>
-          <div className={`checker-stack bar-stack bar-stack-bottom ${playerStackSelected ? 'bar-stack-selected selected is-selected' : ''}`}>
-            {Array.from({ length: aCount }).map((_, i) => (
-              <span
-                key={`a-${i}`}
-                className="checker checker-a stack-checker bar-checker"
-                style={{
-                  '--stack-index': i,
-                  '--stack-offset': i / aStackDivisor,
-                  zIndex: aCount - i
-                }}
-              />
-            ))}
-          </div>
+        <div className={`barStackBottom ${playerStackSelected ? 'barForcedSelected' : ''}`} aria-hidden="true">
+          {Array.from({ length: aCount }).map((_, i) => (
+            <span
+              key={`a-${i}`}
+              className={`checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''}`}
+              style={{ zIndex: aCount - i }}
+            />
+          ))}
         </div>
       </div>
     </div>
