@@ -515,6 +515,15 @@ button:focus-visible {
   bottom: calc(var(--stack-offset) * (100% - var(--checker-size)));
 }
 
+.checker-movable {
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 209, 102, 0.88),
+    0 0 12px 3px rgba(255, 209, 102, 0.68);
+}
+
 .moving-checker {
   position: absolute;
   z-index: 25;
