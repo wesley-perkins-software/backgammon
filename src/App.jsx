@@ -240,8 +240,8 @@ function Point({ index, value, selected, highlighted, movable, onClick, isTop, p
 function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
-  const visibleA = Math.min(aCount, 5);
-  const visibleB = Math.min(bCount, 5);
+  const aStackDivisor = Math.max(4, aCount - 1);
+  const bStackDivisor = Math.max(4, bCount - 1);
 
   return (
     <button
@@ -251,24 +251,38 @@ function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
       type="button"
       aria-label="Bar"
     >
-      <span className="bar-title">BAR</span>
       <div className="bar-lanes" aria-hidden="true">
-        <div className="bar-lane bar-lane-a">
-          {Array.from({ length: visibleA }).map((_, i) => (
-            <span key={`a-${i}`} className="checker checker-a bar-checker" />
-          ))}
-          {aCount > 5 && <span className="bar-stack-count">{aCount}</span>}
+        <div className="bar-zone barTop">
+          <div className="checker-stack bar-stack bar-stack-top">
+            {Array.from({ length: bCount }).map((_, i) => (
+              <span
+                key={`b-${i}`}
+                className="checker checker-b stack-checker bar-checker"
+                style={{
+                  '--stack-index': i,
+                  '--stack-offset': i / bStackDivisor,
+                  zIndex: bCount - i
+                }}
+              />
+            ))}
+          </div>
         </div>
-        <div className="bar-lane bar-lane-b">
-          {Array.from({ length: visibleB }).map((_, i) => (
-            <span key={`b-${i}`} className="checker checker-b bar-checker" />
-          ))}
-          {bCount > 5 && <span className="bar-stack-count">{bCount}</span>}
+
+        <div className="bar-zone barBottom">
+          <div className="checker-stack bar-stack bar-stack-bottom">
+            {Array.from({ length: aCount }).map((_, i) => (
+              <span
+                key={`a-${i}`}
+                className="checker checker-a stack-checker bar-checker"
+                style={{
+                  '--stack-index': i,
+                  '--stack-offset': i / aStackDivisor,
+                  zIndex: aCount - i
+                }}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="bar-counts">
-        <span>A {aCount}</span>
-        <span>B {bCount}</span>
       </div>
     </button>
   );
