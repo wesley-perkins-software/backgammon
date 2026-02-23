@@ -237,7 +237,7 @@ function Point({ index, value, selected, highlighted, movable, onClick, isTop, p
   );
 }
 
-function Bar({ state, playerStackSelected, highlighted, movable, onClick, barRef }) {
+function Bar({ state, playerStackSelected, playerStackMovable, highlighted, movable, onClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
 
@@ -268,7 +268,7 @@ function Bar({ state, playerStackSelected, highlighted, movable, onClick, barRef
           {Array.from({ length: aCount }).map((_, i) => (
             <span
               key={`a-${i}`}
-              className={`checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''}`}
+              className={`checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'barCheckerMovable' : ''}`}
               style={{ zIndex: aCount - i }}
             />
           ))}
@@ -330,7 +330,7 @@ export default function App() {
     game.dice.remaining.length > 0 &&
     game.bar.A > 0;
 
-  const activeSelectedSource = selectedSource ?? (forcedBarSelection ? 'bar' : null);
+  const activeSelectedSource = selectedSource;
 
   const moveOptionsForSelected = useMemo(() => {
     if (activeSelectedSource == null) {
@@ -800,6 +800,7 @@ export default function App() {
               barRef={barRef}
               state={game}
               playerStackSelected={activeSelectedSource === 'bar'}
+              playerStackMovable={showMovableSources && forcedBarSelection}
               highlighted={destinationSet.has('bar')}
               movable={showMovableSources && movableSourceSet.has('bar')}
               onClick={() => {
