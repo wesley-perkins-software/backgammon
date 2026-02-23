@@ -224,7 +224,7 @@ function Point({ index, value, selected, highlighted, movableSource, onClick, is
         {Array.from({ length: count }).map((_, i) => (
           <span
             key={i}
-            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movableSource && i === 0 ? 'checker-movable-source' : ''}`.trim()}
+            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movableSource && i === count - 1 ? 'checker-movable-source' : ''}`.trim()}
             style={{
               '--stack-index': i,
               '--stack-offset': i / stackDivisor,
