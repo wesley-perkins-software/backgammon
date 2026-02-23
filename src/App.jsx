@@ -267,7 +267,7 @@ function Bar({ state, playerStackSelected, playerStackMovable, highlighted, mova
         <div className={`barStackBottom ${playerStackSelected ? 'barForcedSelected' : ''}`} aria-hidden="true">
           {Array.from({ length: aCount }).map((_, i) => {
             const isInteractivePlayerChecker = i === 0 && !!onPlayerCheckerClick;
-            const playerCheckerClassName = `checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'barCheckerMovable' : ''} ${isInteractivePlayerChecker ? 'barCheckerInteractive' : ''}`;
+            const playerCheckerClassName = `checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'checker-movable' : ''} ${isInteractivePlayerChecker ? 'barCheckerInteractive' : ''}`;
 
             if (!isInteractivePlayerChecker) {
               return <span key={`a-${i}`} className={playerCheckerClassName} style={{ zIndex: aCount - i }} />;
@@ -812,7 +812,7 @@ export default function App() {
               barRef={barRef}
               state={game}
               playerStackSelected={activeSelectedSource === 'bar'}
-              playerStackMovable={showMovableSources && forcedBarSelection}
+              playerStackMovable={showMovableSources && movableSourceSet.has('bar')}
               highlighted={destinationSet.has('bar')}
               movable={showMovableSources && movableSourceSet.has('bar')}
               onClick={() => {}}
