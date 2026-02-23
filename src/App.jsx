@@ -207,7 +207,7 @@ function BoardDice({ game, diceAnimKey }) {
   );
 }
 
-function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }) {
+function Point({ index, value, selected, highlighted, movableSource, onClick, isTop, pointRef }) {
   const owner = pointOwner(value);
   const count = checkerCount(value);
   const stackDivisor = Math.max(4, count - 1);
@@ -215,7 +215,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   return (
     <button
       ref={pointRef}
-      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
+      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'isSelected' : ''} ${highlighted ? 'isLegalDest' : ''}`}
       onClick={onClick}
       aria-label={`Point ${index + 1}`}
       type="button"
@@ -224,7 +224,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
         {Array.from({ length: count }).map((_, i) => (
           <span
             key={i}
-            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'}`}
+            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movableSource && i === count - 1 ? 'isMovable' : ''}`.trim()}
             style={{
               '--stack-index': i,
               '--stack-offset': i / stackDivisor,
@@ -237,7 +237,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   );
 }
 
-function Bar({ state, selected, highlighted, onClick, barRef }) {
+function Bar({ state, currentPlayer, selected, highlighted, movableSource, onClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
   const visibleA = Math.min(aCount, 5);
@@ -246,7 +246,7 @@ function Bar({ state, selected, highlighted, onClick, barRef }) {
   return (
     <button
       ref={barRef}
-      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
+      className={`bar-column ${selected ? 'isSelected' : ''} ${highlighted ? 'isLegalDest' : ''}`}
       onClick={onClick}
       type="button"
       aria-label="Bar"
@@ -255,13 +255,19 @@ function Bar({ state, selected, highlighted, onClick, barRef }) {
       <div className="bar-lanes" aria-hidden="true">
         <div className="bar-lane bar-lane-a">
           {Array.from({ length: visibleA }).map((_, i) => (
-            <span key={`a-${i}`} className="checker checker-a bar-checker" />
+            <span
+              key={`a-${i}`}
+              className={`checker checker-a bar-checker ${movableSource && currentPlayer === PLAYER_A && i === 0 ? 'isMovable' : ''}`.trim()}
+            />
           ))}
           {aCount > 5 && <span className="bar-stack-count">{aCount}</span>}
         </div>
         <div className="bar-lane bar-lane-b">
           {Array.from({ length: visibleB }).map((_, i) => (
-            <span key={`b-${i}`} className="checker checker-b bar-checker" />
+            <span
+              key={`b-${i}`}
+              className={`checker checker-b bar-checker ${movableSource && currentPlayer === PLAYER_B && i === 0 ? 'isMovable' : ''}`.trim()}
+            />
           ))}
           {bCount > 5 && <span className="bar-stack-count">{bCount}</span>}
         </div>
@@ -279,7 +285,7 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
     <button
       ref={trayRef}
       type="button"
-      className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${className}`.trim()}
+      className={`bearoff-tray ${highlighted ? 'isLegalDest' : ''} ${className}`.trim()}
       onClick={onClick}
       aria-label={`${label} bear off`}
     >
@@ -362,6 +368,15 @@ export default function App() {
     }
     return set;
   }, [moveOptionsForSelected]);
+
+  const shouldShowMovableHints = !isComputerTurn && !isAnimatingMove && !game.winner && game.dice.remaining.length > 0;
+
+  const movableSourceSet = useMemo(() => {
+    if (!shouldShowMovableHints) {
+      return new Set();
+    }
+    return new Set(movesBySource.keys());
+  }, [movesBySource, shouldShowMovableHints]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
@@ -718,6 +733,7 @@ export default function App() {
         }}
         selected={selectedSource === point}
         highlighted={destinationSet.has(String(point))}
+        movableSource={movableSourceSet.has(String(point))}
         onClick={() => {
           if (isAnimatingMove || isComputerTurn) {
             return;
@@ -764,8 +780,10 @@ export default function App() {
             <Bar
               barRef={barRef}
               state={game}
+              currentPlayer={game.currentPlayer}
               selected={selectedSource === 'bar'}
               highlighted={destinationSet.has('bar')}
+              movableSource={movableSourceSet.has('bar')}
               onClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
