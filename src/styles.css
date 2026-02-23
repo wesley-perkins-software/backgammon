@@ -15,10 +15,10 @@
   --checker-b2: #3f4f60;
   --accent: #ffd166;
   --focus: #3a90b3;
-  --selected-outline: #2388ff;
-  --selected-glow: rgba(35, 136, 255, 0.34);
-  --legal-outline: rgba(255, 209, 102, 0.62);
-  --legal-glow: rgba(255, 209, 102, 0.14);
+  --hl-gold: rgba(255, 215, 64, 0.9);
+  --hl-gold-soft: rgba(255, 215, 64, 0.35);
+  --hl-blue: rgba(90, 170, 255, 0.95);
+  --hl-blue-soft: rgba(90, 170, 255, 0.35);
   --board-center-gap: 76px;
   --checker-size: min(4.5vw, 38px);
   --stack-edge-gap: 0.08rem;
@@ -493,14 +493,12 @@ button:focus-visible {
     inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.checker-movable-source {
+.isMovable {
   box-shadow:
-    0 0 0 2px rgba(255, 243, 176, 0.95),
-    0 0 10px 3px rgba(255, 218, 74, 0.75),
+    0 0 10px var(--hl-gold-soft),
     0 2px 0 rgba(0, 0, 0, 0.35),
     inset 0 2px 4px rgba(255, 255, 255, 0.35),
     inset 0 -2px 4px rgba(0, 0, 0, 0.2);
-  animation: movableCheckerGlow 1.25s ease-in-out infinite alternate;
 }
 
 .checker-a {
@@ -538,47 +536,49 @@ button:focus-visible {
   will-change: left, top;
 }
 
-.selected,
-.is-selected {
+.isLegalDest {
   position: relative;
-  z-index: 3;
-  box-shadow:
-    0 0 0 3px var(--selected-outline) inset,
-    0 0 12px 1px var(--selected-glow);
-}
-
-.legal,
-.is-legal {
-  position: relative;
-  z-index: 1;
+  z-index: 2;
   border-radius: 8px;
   box-shadow:
-    0 0 0 1.5px var(--legal-outline) inset,
-    0 0 8px 0 var(--legal-glow);
+    0 0 0 1.5px rgba(255, 215, 64, 0.7) inset,
+    0 0 8px rgba(255, 215, 64, 0.18);
 }
 
-.point.selected .checker-stack,
-.point.is-selected .checker-stack {
+.isSelected {
+  position: relative;
+  z-index: 4;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 3px var(--hl-blue) inset,
+    0 0 14px var(--hl-blue-soft);
+}
+
+.point .checker-stack {
+  transition: transform 160ms ease-out;
+}
+
+.point.isSelected .checker-stack {
   will-change: transform;
   transform: translateY(-2px) scale(1.01);
-  transition: transform 150ms ease-out;
 }
 
-.point.selected.legal,
-.point.is-selected.is-legal,
-.bar-column.selected.legal,
-.bar-column.is-selected.is-legal,
-.bearoff-tray.selected.legal,
-.bearoff-tray.is-selected.is-legal {
+.point.isSelected.isLegalDest,
+.bar-column.isSelected.isLegalDest,
+.bearoff-tray.isSelected.isLegalDest {
   box-shadow:
-    0 0 0 3px var(--selected-outline) inset,
-    0 0 12px 1px var(--selected-glow);
+    0 0 0 3px var(--hl-blue) inset,
+    0 0 14px var(--hl-blue-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .point.selected .checker-stack,
-  .point.is-selected .checker-stack {
+  .isMovable,
+  .point .checker-stack {
+    animation: none;
     transition: none;
+  }
+
+  .point.isSelected .checker-stack {
     transform: none;
     will-change: auto;
   }
@@ -638,14 +638,6 @@ button:focus-visible {
   }
 }
 
-@keyframes movableCheckerGlow {
-  from {
-    filter: saturate(1) brightness(1);
-  }
-  to {
-    filter: saturate(1.2) brightness(1.08);
-  }
-}
 
 @keyframes dieCubeRoll {
   0% {

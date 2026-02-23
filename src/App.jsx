@@ -215,7 +215,7 @@ function Point({ index, value, selected, highlighted, movableSource, onClick, is
   return (
     <button
       ref={pointRef}
-      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
+      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'isSelected' : ''} ${highlighted ? 'isLegalDest' : ''}`}
       onClick={onClick}
       aria-label={`Point ${index + 1}`}
       type="button"
@@ -224,7 +224,7 @@ function Point({ index, value, selected, highlighted, movableSource, onClick, is
         {Array.from({ length: count }).map((_, i) => (
           <span
             key={i}
-            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movableSource && i === count - 1 ? 'checker-movable-source' : ''}`.trim()}
+            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movableSource && i === count - 1 ? 'isMovable' : ''}`.trim()}
             style={{
               '--stack-index': i,
               '--stack-offset': i / stackDivisor,
@@ -246,7 +246,7 @@ function Bar({ state, currentPlayer, selected, highlighted, movableSource, onCli
   return (
     <button
       ref={barRef}
-      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
+      className={`bar-column ${selected ? 'isSelected' : ''} ${highlighted ? 'isLegalDest' : ''}`}
       onClick={onClick}
       type="button"
       aria-label="Bar"
@@ -257,7 +257,7 @@ function Bar({ state, currentPlayer, selected, highlighted, movableSource, onCli
           {Array.from({ length: visibleA }).map((_, i) => (
             <span
               key={`a-${i}`}
-              className={`checker checker-a bar-checker ${movableSource && currentPlayer === PLAYER_A && i === 0 ? 'checker-movable-source' : ''}`.trim()}
+              className={`checker checker-a bar-checker ${movableSource && currentPlayer === PLAYER_A && i === 0 ? 'isMovable' : ''}`.trim()}
             />
           ))}
           {aCount > 5 && <span className="bar-stack-count">{aCount}</span>}
@@ -266,7 +266,7 @@ function Bar({ state, currentPlayer, selected, highlighted, movableSource, onCli
           {Array.from({ length: visibleB }).map((_, i) => (
             <span
               key={`b-${i}`}
-              className={`checker checker-b bar-checker ${movableSource && currentPlayer === PLAYER_B && i === 0 ? 'checker-movable-source' : ''}`.trim()}
+              className={`checker checker-b bar-checker ${movableSource && currentPlayer === PLAYER_B && i === 0 ? 'isMovable' : ''}`.trim()}
             />
           ))}
           {bCount > 5 && <span className="bar-stack-count">{bCount}</span>}
@@ -285,7 +285,7 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
     <button
       ref={trayRef}
       type="button"
-      className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${className}`.trim()}
+      className={`bearoff-tray ${highlighted ? 'isLegalDest' : ''} ${className}`.trim()}
       onClick={onClick}
       aria-label={`${label} bear off`}
     >
@@ -733,7 +733,7 @@ export default function App() {
         }}
         selected={selectedSource === point}
         highlighted={destinationSet.has(String(point))}
-        movableSource={movableSourceSet.has(String(point)) && selectedSource !== point}
+        movableSource={movableSourceSet.has(String(point))}
         onClick={() => {
           if (isAnimatingMove || isComputerTurn) {
             return;
@@ -783,7 +783,7 @@ export default function App() {
               currentPlayer={game.currentPlayer}
               selected={selectedSource === 'bar'}
               highlighted={destinationSet.has('bar')}
-              movableSource={movableSourceSet.has('bar') && selectedSource !== 'bar'}
+              movableSource={movableSourceSet.has('bar')}
               onClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
