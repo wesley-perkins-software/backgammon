@@ -493,6 +493,16 @@ button:focus-visible {
     inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.checker-movable-source {
+  box-shadow:
+    0 0 0 2px rgba(255, 243, 176, 0.95),
+    0 0 10px 3px rgba(255, 218, 74, 0.75),
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  animation: movableCheckerGlow 1.25s ease-in-out infinite alternate;
+}
+
 .checker-a {
   background: radial-gradient(circle at 30% 28%, var(--checker-a1), var(--checker-a2));
 }
@@ -625,6 +635,15 @@ button:focus-visible {
   }
   100% {
     transform: rotate(1080deg) scale(1);
+  }
+}
+
+@keyframes movableCheckerGlow {
+  from {
+    filter: saturate(1) brightness(1);
+  }
+  to {
+    filter: saturate(1.2) brightness(1.08);
   }
 }
 
