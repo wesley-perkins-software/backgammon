@@ -244,14 +244,18 @@ function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
   const bStackDivisor = Math.max(4, bCount - 1);
 
   return (
-    <button
-      ref={barRef}
-      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
-      onClick={onClick}
-      type="button"
-      aria-label="Bar"
-    >
-      <div className="bar-lanes" aria-hidden="true">
+    <div className="bar-lane-wrap">
+      <button
+        ref={barRef}
+        className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
+        onClick={onClick}
+        type="button"
+        aria-label="Bar"
+      >
+        <div className="bar-seam" aria-hidden="true" />
+      </button>
+
+      <div className="bar-checker-overlay" aria-hidden="true">
         <div className="bar-zone barTop">
           <div className="checker-stack bar-stack bar-stack-top">
             {Array.from({ length: bCount }).map((_, i) => (
@@ -284,7 +288,7 @@ function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
