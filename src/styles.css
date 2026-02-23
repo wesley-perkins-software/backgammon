@@ -115,7 +115,6 @@ button:focus-visible {
   overflow: hidden;
   display: grid;
   place-items: center;
-  animation: dieRoll 1s ease-out;
 }
 
 .die-used {

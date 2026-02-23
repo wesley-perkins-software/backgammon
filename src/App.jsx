@@ -82,7 +82,7 @@ function describeRequiredAction(state, legalMoves) {
   return state.statusText;
 }
 
-function DieFace({ value, animateKey, className = '', ariaHidden = false, used = false }) {
+function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   const safeValue = Math.min(6, Math.max(1, Number(value) || 1));
   const pipsByValue = {
     1: [5],
@@ -95,7 +95,6 @@ function DieFace({ value, animateKey, className = '', ariaHidden = false, used =
 
   return (
     <div
-      key={`${safeValue}-${animateKey}`}
       className={`die ${used ? 'die-used' : ''} ${className}`.trim()}
       role={ariaHidden ? undefined : 'img'}
       aria-label={ariaHidden ? undefined : `Die showing ${safeValue}${used ? ', used' : ''}`}
@@ -110,8 +109,8 @@ function DieFace({ value, animateKey, className = '', ariaHidden = false, used =
   );
 }
 
-function DicePanel({ game, diceAnimKey, isBoardDiceRolling }) {
-  if (isBoardDiceRolling) {
+function DicePanel({ game, isBoardDiceRolling }) {
+  if (isBoardDiceRolling || game.dice.values.length !== 2) {
     return <div className="dice-panel" aria-label="Dice" />;
   }
 
@@ -136,18 +135,9 @@ function DicePanel({ game, diceAnimKey, isBoardDiceRolling }) {
 
   return (
     <div className="dice-panel" aria-label="Dice">
-      {game.dice.values.length === 2 ? (
-        <>
-          {rolledDiceWithUsage.map((die, i) => (
-            <DieFace key={`status-die-${i}`} value={die.value} used={die.used} animateKey={diceAnimKey + i} />
-          ))}
-        </>
-      ) : (
-        <>
-          <div className="die die-empty" />
-          <div className="die die-empty" />
-        </>
-      )}
+      {rolledDiceWithUsage.map((die, i) => (
+        <DieFace key={`status-die-${i}`} value={die.value} used={die.used} />
+      ))}
     </div>
   );
 }
@@ -739,7 +729,7 @@ export default function App() {
       <section className="status" aria-live="polite">
         <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
         <div><strong>Action:</strong> {statusText}</div>
-        <DicePanel game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
+        <DicePanel game={game} isBoardDiceRolling={isBoardDiceRolling} />
       </section>
 
       <section className="controls" aria-label="Game controls">
