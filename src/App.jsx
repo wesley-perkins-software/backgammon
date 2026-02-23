@@ -301,6 +301,7 @@ export default function App() {
   const barRef = useRef(null);
   const bearOffRefs = useRef({ A: null, B: null });
   const boardDiceRollTimerRef = useRef(null);
+  const hasInitializedDiceAnimationRef = useRef(false);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
@@ -356,12 +357,15 @@ export default function App() {
   }, [game, movesBySource, selectedSource]);
 
   const destinationSet = useMemo(() => {
+    if (isBoardDiceRolling) {
+      return new Set();
+    }
     const set = new Set();
     for (const option of moveOptionsForSelected) {
       set.add(destinationKey(option.to));
     }
     return set;
-  }, [moveOptionsForSelected]);
+  }, [isBoardDiceRolling, moveOptionsForSelected]);
 
   const movableSourceSet = useMemo(() => {
     const set = new Set();
@@ -371,7 +375,7 @@ export default function App() {
     return set;
   }, [legalMoves]);
 
-  const showMovableSources = !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
+  const showMovableSources = !isBoardDiceRolling && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
@@ -389,6 +393,12 @@ export default function App() {
 
   const diceSignature = game.dice.values.join('-');
   useEffect(() => {
+    if (!hasInitializedDiceAnimationRef.current) {
+      hasInitializedDiceAnimationRef.current = true;
+      setIsBoardDiceRolling(false);
+      return undefined;
+    }
+
     if (boardDiceRollTimerRef.current) {
       window.clearTimeout(boardDiceRollTimerRef.current);
       boardDiceRollTimerRef.current = null;
@@ -484,7 +494,7 @@ export default function App() {
   }
 
   function handleSelectSource(source) {
-    if (isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) {
+    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) {
       return;
     }
 
@@ -638,7 +648,7 @@ export default function App() {
   }
 
   function moveToDestination(destination) {
-    if (isAnimatingMove || isComputerTurn || selectedSource == null) {
+    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || selectedSource == null) {
       return;
     }
 
