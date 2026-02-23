@@ -251,9 +251,7 @@ function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
       type="button"
       aria-label="Bar"
     >
-      <span className="bar-title">BAR</span>
       <div className="bar-lanes" aria-hidden="true">
-        <span className="bar-badge bar-badge-top">COM: {bCount}</span>
         <div className="bar-zone barTop">
           <div className="checker-stack bar-stack bar-stack-top">
             {Array.from({ length: bCount }).map((_, i) => (
@@ -285,7 +283,6 @@ function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
             ))}
           </div>
         </div>
-        <span className="bar-badge bar-badge-bottom">YOU: {aCount}</span>
       </div>
     </button>
   );
