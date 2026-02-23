@@ -15,6 +15,10 @@
   --checker-b2: #3f4f60;
   --accent: #ffd166;
   --focus: #3a90b3;
+  --selected-outline: #2388ff;
+  --selected-glow: rgba(35, 136, 255, 0.34);
+  --legal-outline: rgba(255, 209, 102, 0.62);
+  --legal-glow: rgba(255, 209, 102, 0.14);
   --board-center-gap: 76px;
   --checker-size: min(4.5vw, 38px);
   --stack-edge-gap: 0.08rem;
@@ -524,30 +528,50 @@ button:focus-visible {
   will-change: left, top;
 }
 
-.selected {
-  box-shadow: 0 0 0 3px var(--focus) inset;
+.selected,
+.is-selected {
+  position: relative;
+  z-index: 3;
+  box-shadow:
+    0 0 0 3px var(--selected-outline) inset,
+    0 0 12px 1px var(--selected-glow);
 }
 
-.highlighted {
-  box-shadow: 0 0 0 3px var(--accent) inset;
+.legal,
+.is-legal {
+  position: relative;
+  z-index: 1;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1.5px var(--legal-outline) inset,
+    0 0 8px 0 var(--legal-glow);
 }
 
-.point.selected::after,
-.point.highlighted::after {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 0.35rem;
-  border: 2px solid transparent;
-  pointer-events: none;
+.point.selected .checker-stack,
+.point.is-selected .checker-stack {
+  will-change: transform;
+  transform: translateY(-2px) scale(1.01);
+  transition: transform 150ms ease-out;
 }
 
-.point.selected::after {
-  border-color: var(--focus);
+.point.selected.legal,
+.point.is-selected.is-legal,
+.bar-column.selected.legal,
+.bar-column.is-selected.is-legal,
+.bearoff-tray.selected.legal,
+.bearoff-tray.is-selected.is-legal {
+  box-shadow:
+    0 0 0 3px var(--selected-outline) inset,
+    0 0 12px 1px var(--selected-glow);
 }
 
-.point.highlighted::after {
-  border-color: var(--accent);
+@media (prefers-reduced-motion: reduce) {
+  .point.selected .checker-stack,
+  .point.is-selected .checker-stack {
+    transition: none;
+    transform: none;
+    will-change: auto;
+  }
 }
 
 .debug {
@@ -907,4 +931,3 @@ button:focus-visible {
     min-height: 74px;
   }
 }
-
