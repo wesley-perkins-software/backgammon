@@ -400,19 +400,20 @@ button:focus-visible {
   width: 100%;
   display: flex;
   align-items: center;
-  pointer-events: none;
 }
 
 .barStackTop {
   position: absolute;
   top: 6px;
   flex-direction: column;
+  pointer-events: none;
 }
 
 .barStackBottom {
   position: absolute;
   bottom: 6px;
   flex-direction: column-reverse;
+  pointer-events: auto;
 }
 
 .barStackTop .bar-checker + .bar-checker {
@@ -427,7 +428,19 @@ button:focus-visible {
   transform: scale(0.9);
   transform-origin: center;
   z-index: 3;
+  pointer-events: none;
+}
+
+.bar-checker-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.barCheckerInteractive {
   pointer-events: auto;
+  cursor: pointer;
 }
 
 .barForcedSelected .bar-checker:first-child {

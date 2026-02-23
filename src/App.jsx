@@ -237,7 +237,7 @@ function Point({ index, value, selected, highlighted, movable, onClick, isTop, p
   );
 }
 
-function Bar({ state, playerStackSelected, playerStackMovable, highlighted, movable, onClick, barRef }) {
+function Bar({ state, playerStackSelected, playerStackMovable, highlighted, movable, onClick, onPlayerCheckerClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
 
@@ -265,13 +265,25 @@ function Bar({ state, playerStackSelected, playerStackMovable, highlighted, mova
         </div>
 
         <div className={`barStackBottom ${playerStackSelected ? 'barForcedSelected' : ''}`} aria-hidden="true">
-          {Array.from({ length: aCount }).map((_, i) => (
-            <span
-              key={`a-${i}`}
-              className={`checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'barCheckerMovable' : ''}`}
-              style={{ zIndex: aCount - i }}
-            />
-          ))}
+          {Array.from({ length: aCount }).map((_, i) => {
+            const isInteractivePlayerChecker = i === 0 && !!onPlayerCheckerClick;
+            const playerCheckerClassName = `checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'barCheckerMovable' : ''} ${isInteractivePlayerChecker ? 'barCheckerInteractive' : ''}`;
+
+            if (!isInteractivePlayerChecker) {
+              return <span key={`a-${i}`} className={playerCheckerClassName} style={{ zIndex: aCount - i }} />;
+            }
+
+            return (
+              <button
+                key={`a-${i}`}
+                type="button"
+                className={`${playerCheckerClassName} bar-checker-button`}
+                style={{ zIndex: aCount - i }}
+                onClick={onPlayerCheckerClick}
+                aria-label="Select checker on bar"
+              />
+            );
+          })}
         </div>
       </div>
     </div>
@@ -803,15 +815,12 @@ export default function App() {
               playerStackMovable={showMovableSources && forcedBarSelection}
               highlighted={destinationSet.has('bar')}
               movable={showMovableSources && movableSourceSet.has('bar')}
-              onClick={() => {
+              onClick={() => {}}
+              onPlayerCheckerClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
                 }
-                if (activeSelectedSource != null && destinationSet.has('bar')) {
-                  moveToDestination('bar');
-                } else {
-                  handleSelectSource('bar');
-                }
+                handleSelectSource('bar');
               }}
             />
 
