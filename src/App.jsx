@@ -410,7 +410,7 @@ export default function App() {
     if (game.winner || !isComputerTurn) {
       return undefined;
     }
-    if (isAnimatingMove) {
+    if (isAnimatingMove || isBoardDiceRolling) {
       return undefined;
     }
 
@@ -439,7 +439,7 @@ export default function App() {
     }, 420);
 
     return () => window.clearTimeout(timer);
-  }, [game, isComputerTurn, isAnimatingMove]);
+  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
 
   function commit(next) {
     setGame(next);
