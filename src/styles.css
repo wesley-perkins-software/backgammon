@@ -541,15 +541,17 @@ button:focus-visible {
 .is-legal {
   position: relative;
   z-index: 1;
+  border-radius: 8px;
   box-shadow:
     0 0 0 1.5px var(--legal-outline) inset,
-    0 0 6px 0 var(--legal-glow);
+    0 0 8px 0 var(--legal-glow);
 }
 
 .point.selected .checker-stack,
 .point.is-selected .checker-stack {
   will-change: transform;
-  animation: selectedCheckerLift 1.2s ease-in-out infinite alternate;
+  transform: translateY(-2px) scale(1.01);
+  transition: transform 150ms ease-out;
 }
 
 .point.selected.legal,
@@ -563,19 +565,10 @@ button:focus-visible {
     0 0 12px 1px var(--selected-glow);
 }
 
-@keyframes selectedCheckerLift {
-  from {
-    transform: translateY(0) scale(1);
-  }
-  to {
-    transform: translateY(-2px) scale(1.02);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .point.selected .checker-stack,
   .point.is-selected .checker-stack {
-    animation: none;
+    transition: none;
     transform: none;
     will-change: auto;
   }
