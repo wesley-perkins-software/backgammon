@@ -215,7 +215,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   return (
     <button
       ref={pointRef}
-      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'highlighted is-legal' : ''}`}
+      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
       onClick={onClick}
       aria-label={`Point ${index + 1}`}
       type="button"
@@ -246,7 +246,7 @@ function Bar({ state, selected, highlighted, onClick, barRef }) {
   return (
     <button
       ref={barRef}
-      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'highlighted is-legal' : ''}`}
+      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''}`}
       onClick={onClick}
       type="button"
       aria-label="Bar"
@@ -279,7 +279,7 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
     <button
       ref={trayRef}
       type="button"
-      className={`bearoff-tray ${highlighted ? 'highlighted is-legal' : ''} ${className}`.trim()}
+      className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${className}`.trim()}
       onClick={onClick}
       aria-label={`${label} bear off`}
     >
