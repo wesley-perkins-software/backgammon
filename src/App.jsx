@@ -237,54 +237,44 @@ function Point({ index, value, selected, highlighted, movable, onClick, isTop, p
   );
 }
 
-function Bar({ state, selected, highlighted, movable, onClick, barRef }) {
+function Bar({ state, playerStackSelected, highlighted, movable, onClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
-  const aStackDivisor = Math.max(4, aCount - 1);
-  const bStackDivisor = Math.max(4, bCount - 1);
 
   return (
-    <button
-      ref={barRef}
-      className={`bar-column ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
-      onClick={onClick}
-      type="button"
-      aria-label="Bar"
-    >
-      <div className="bar-lanes" aria-hidden="true">
-        <div className="bar-zone barTop">
-          <div className="checker-stack bar-stack bar-stack-top">
-            {Array.from({ length: bCount }).map((_, i) => (
-              <span
-                key={`b-${i}`}
-                className="checker checker-b stack-checker bar-checker"
-                style={{
-                  '--stack-index': i,
-                  '--stack-offset': i / bStackDivisor,
-                  zIndex: bCount - i
-                }}
-              />
-            ))}
-          </div>
+    <div className="bar-lane-wrap">
+      <button
+        ref={barRef}
+        className={`bar-column ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
+        onClick={onClick}
+        type="button"
+        aria-label="Bar"
+      >
+        <div className="bar-seam" aria-hidden="true" />
+      </button>
+
+      <div className="bar-checker-overlay" aria-hidden="true">
+        <div className="barStackTop" aria-hidden="true">
+          {Array.from({ length: bCount }).map((_, i) => (
+            <span
+              key={`b-${i}`}
+              className="checker checker-b bar-checker"
+              style={{ zIndex: bCount - i }}
+            />
+          ))}
         </div>
 
-        <div className="bar-zone barBottom">
-          <div className="checker-stack bar-stack bar-stack-bottom">
-            {Array.from({ length: aCount }).map((_, i) => (
-              <span
-                key={`a-${i}`}
-                className="checker checker-a stack-checker bar-checker"
-                style={{
-                  '--stack-index': i,
-                  '--stack-offset': i / aStackDivisor,
-                  zIndex: aCount - i
-                }}
-              />
-            ))}
-          </div>
+        <div className={`barStackBottom ${playerStackSelected ? 'barForcedSelected' : ''}`} aria-hidden="true">
+          {Array.from({ length: aCount }).map((_, i) => (
+            <span
+              key={`a-${i}`}
+              className={`checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''}`}
+              style={{ zIndex: aCount - i }}
+            />
+          ))}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -332,11 +322,21 @@ export default function App() {
     return map;
   }, [legalMoves]);
 
+  const forcedBarSelection =
+    !game.winner &&
+    !isBoardDiceRolling &&
+    !isAnimatingMove &&
+    game.currentPlayer === PLAYER_A &&
+    game.dice.remaining.length > 0 &&
+    game.bar.A > 0;
+
+  const activeSelectedSource = selectedSource ?? (forcedBarSelection ? 'bar' : null);
+
   const moveOptionsForSelected = useMemo(() => {
-    if (selectedSource == null) {
+    if (activeSelectedSource == null) {
       return [];
     }
-    const sourceMoves = movesBySource.get(sourceKey(selectedSource)) ?? [];
+    const sourceMoves = movesBySource.get(sourceKey(activeSelectedSource)) ?? [];
     if (!sourceMoves.length) {
       return [];
     }
@@ -368,7 +368,7 @@ export default function App() {
     }
 
     return options;
-  }, [game, movesBySource, selectedSource]);
+  }, [activeSelectedSource, game, movesBySource]);
 
   const destinationSet = useMemo(() => {
     if (isBoardDiceRolling) {
@@ -662,7 +662,7 @@ export default function App() {
   }
 
   function moveToDestination(destination) {
-    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || selectedSource == null) {
+    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || activeSelectedSource == null) {
       return;
     }
 
@@ -750,14 +750,14 @@ export default function App() {
             pointRefs.current.delete(point);
           }
         }}
-        selected={selectedSource === point}
+        selected={activeSelectedSource === point}
         highlighted={destinationSet.has(String(point))}
         movable={showMovableSources && movableSourceSet.has(String(point))}
         onClick={() => {
           if (isAnimatingMove || isComputerTurn) {
             return;
           }
-          if (selectedSource != null && destinationSet.has(String(point))) {
+          if (activeSelectedSource != null && destinationSet.has(String(point))) {
             moveToDestination(point);
           } else {
             handleSelectSource(point);
@@ -799,14 +799,14 @@ export default function App() {
             <Bar
               barRef={barRef}
               state={game}
-              selected={selectedSource === 'bar'}
+              playerStackSelected={activeSelectedSource === 'bar'}
               highlighted={destinationSet.has('bar')}
               movable={showMovableSources && movableSourceSet.has('bar')}
               onClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
                 }
-                if (selectedSource != null && destinationSet.has('bar')) {
+                if (activeSelectedSource != null && destinationSet.has('bar')) {
                   moveToDestination('bar');
                 } else {
                   handleSelectSource('bar');
