@@ -436,6 +436,9 @@ button:focus-visible {
   background: transparent;
   padding: 0;
   border-radius: 50%;
+  min-height: 0;
+  width: var(--checker-size);
+  height: var(--checker-size);
 }
 
 .barCheckerInteractive {
