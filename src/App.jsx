@@ -6,6 +6,7 @@ import {
   applyMove,
   chooseComputerMove,
   chooseMoveForDestination,
+  calculatePipCount,
   computeLegalMoves,
   createInitialState,
   playerLabel,
@@ -22,6 +23,9 @@ const BOTTOM_LEFT = [11, 10, 9, 8, 7, 6];
 const BOTTOM_RIGHT = [5, 4, 3, 2, 1, 0];
 const MOVE_STEP_MS = 210;
 const MOVE_START_DELAY_MS = 40;
+const BOARD_DICE_ROLL_MS = 1000;
+const OPENING_ROLL_STEP_DELAY_MS = 1000;
+const COMPUTER_TURN_DELAY_MS = 1000;
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -59,12 +63,40 @@ function loadInitial() {
   return restoreState(raw) ?? createInitialState();
 }
 
+function getRolledDiceWithUsage(game, { expandDoubles = true } = {}) {
+  if (game.dice.values.length !== 2) {
+    return [];
+  }
+
+  const remainingCounts = {};
+  for (const die of game.dice.remaining) {
+    remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
+  }
+
+  const displayDiceValues =
+    expandDoubles && game.dice.values[0] === game.dice.values[1]
+      ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
+      : game.dice.values;
+
+  return displayDiceValues.map((die) => {
+    const available = remainingCounts[die] ?? 0;
+    if (available > 0) {
+      remainingCounts[die] = available - 1;
+      return { value: die, used: false };
+    }
+    return { value: die, used: true };
+  });
+}
+
 function describeRequiredAction(state, legalMoves) {
   const computerTurn = state.currentPlayer === PLAYER_B;
   const turnName = computerTurn ? 'Computer' : playerLabel(state.currentPlayer);
 
   if (state.winner) {
     return `${playerLabel(state.winner)} wins.`;
+  }
+  if (state.openingRollPending) {
+    return state.statusText;
   }
   if (state.dice.remaining.length === 0) {
     return computerTurn ? 'Computer is rolling...' : `${turnName}: roll dice.`;
@@ -81,7 +113,7 @@ function describeRequiredAction(state, legalMoves) {
   return state.statusText;
 }
 
-function DieFace({ value, animateKey, className = '', ariaHidden = false, used = false }) {
+function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   const safeValue = Math.min(6, Math.max(1, Number(value) || 1));
   const pipsByValue = {
     1: [5],
@@ -94,7 +126,6 @@ function DieFace({ value, animateKey, className = '', ariaHidden = false, used =
 
   return (
     <div
-      key={`${safeValue}-${animateKey}`}
       className={`die ${used ? 'die-used' : ''} ${className}`.trim()}
       role={ariaHidden ? undefined : 'img'}
       aria-label={ariaHidden ? undefined : `Die showing ${safeValue}${used ? ', used' : ''}`}
@@ -109,46 +140,36 @@ function DieFace({ value, animateKey, className = '', ariaHidden = false, used =
   );
 }
 
-function DicePanel({ game, diceAnimKey }) {
-  const remainingCounts = {};
-  for (const die of game.dice.remaining) {
-    remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
+function DicePanel({ game, isBoardDiceRolling, openingRollDisplay }) {
+  if (game.openingRollPending) {
+    return (
+      <div className="dice-panel" aria-label="Dice">
+        {openingRollDisplay?.playerDie ? <DieFace value={openingRollDisplay.playerDie} /> : null}
+        {openingRollDisplay?.computerDie ? <DieFace value={openingRollDisplay.computerDie} /> : null}
+      </div>
+    );
   }
 
-  const displayDiceValues =
-    game.dice.values.length === 2 && game.dice.values[0] === game.dice.values[1]
-      ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
-      : game.dice.values;
+  if (isBoardDiceRolling || game.dice.values.length !== 2) {
+    return <div className="dice-panel" aria-label="Dice" />;
+  }
 
-  const rolledDiceWithUsage = displayDiceValues.map((die) => {
-    const available = remainingCounts[die] ?? 0;
-    if (available > 0) {
-      remainingCounts[die] = available - 1;
-      return { value: die, used: false };
-    }
-    return { value: die, used: true };
-  });
+  const rolledDiceWithUsage = getRolledDiceWithUsage(game);
 
   return (
     <div className="dice-panel" aria-label="Dice">
-      {game.dice.values.length === 2 ? (
-        <>
-          {rolledDiceWithUsage.map((die, i) => (
-            <DieFace key={`status-die-${i}`} value={die.value} used={die.used} animateKey={diceAnimKey + i} />
-          ))}
-        </>
-      ) : (
-        <>
-          <div className="die die-empty" />
-          <div className="die die-empty" />
-        </>
-      )}
+      {rolledDiceWithUsage.map((die, i) => (
+        <DieFace key={`status-die-${i}`} value={die.value} used={die.used} />
+      ))}
     </div>
   );
 }
 
-function BoardDice({ game, diceAnimKey }) {
-  if (game.dice.values.length !== 2) {
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
+  const rolledDiceWithUsage = getRolledDiceWithUsage(game, {
+    expandDoubles: !isBoardDiceRolling
+  });
+  if (rolledDiceWithUsage.length === 0) {
     return null;
   }
 
@@ -185,11 +206,12 @@ function BoardDice({ game, diceAnimKey }) {
 
   return (
     <div className="board-dice-overlay" aria-hidden="true">
-      {[game.dice.values[0], game.dice.values[1]].map((dieValue, idx) => {
+      {rolledDiceWithUsage.map((die, idx) => {
+        const dieValue = die.value;
         const finalValue = Math.min(6, Math.max(1, Number(dieValue) || 1));
         const finalOrientation = orientationByValue[finalValue];
         return (
-          <div key={`board-die-wrap-${idx}`} className="board-die-perspective">
+          <div key={`board-die-wrap-${idx}`} className={`board-die-perspective ${die.used ? 'board-die-used' : ''}`.trim()}>
             <div
               key={`board-die-${idx}-${finalValue}-${diceAnimKey + 2000 + idx}`}
               className="board-die-cube"
@@ -212,7 +234,7 @@ function BoardDice({ game, diceAnimKey }) {
   );
 }
 
-function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }) {
+function Point({ index, value, selected, highlighted, movable, onClick, isTop, pointRef }) {
   const owner = pointOwner(value);
   const count = checkerCount(value);
   const stackDivisor = Math.max(4, count - 1);
@@ -220,7 +242,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   return (
     <button
       ref={pointRef}
-      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected' : ''} ${highlighted ? 'highlighted' : ''}`}
+      className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
       onClick={onClick}
       aria-label={`Point ${index + 1}`}
       type="button"
@@ -229,7 +251,7 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
         {Array.from({ length: count }).map((_, i) => (
           <span
             key={i}
-            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'}`}
+            className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movable && i === count - 1 ? 'checker-movable' : ''}`}
             style={{
               '--stack-index': i,
               '--stack-offset': i / stackDivisor,
@@ -242,40 +264,56 @@ function Point({ index, value, selected, highlighted, onClick, isTop, pointRef }
   );
 }
 
-function Bar({ state, selected, highlighted, onClick, barRef }) {
+function Bar({ state, playerStackSelected, playerStackMovable, highlighted, movable, onClick, onPlayerCheckerClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
-  const visibleA = Math.min(aCount, 5);
-  const visibleB = Math.min(bCount, 5);
 
   return (
-    <button
-      ref={barRef}
-      className={`bar-column ${selected ? 'selected' : ''} ${highlighted ? 'highlighted' : ''}`}
-      onClick={onClick}
-      type="button"
-      aria-label="Bar"
-    >
-      <span className="bar-title">BAR</span>
-      <div className="bar-lanes" aria-hidden="true">
-        <div className="bar-lane bar-lane-a">
-          {Array.from({ length: visibleA }).map((_, i) => (
-            <span key={`a-${i}`} className="checker checker-a bar-checker" />
+    <div className="bar-lane-wrap">
+      <button
+        ref={barRef}
+        className={`bar-column ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`}
+        onClick={onClick}
+        type="button"
+        aria-label="Bar"
+      >
+        <div className="bar-seam" aria-hidden="true" />
+      </button>
+
+      <div className="bar-checker-overlay" aria-hidden="true">
+        <div className="barStackTop" aria-hidden="true">
+          {Array.from({ length: bCount }).map((_, i) => (
+            <span
+              key={`b-${i}`}
+              className="checker checker-b bar-checker"
+              style={{ zIndex: bCount - i }}
+            />
           ))}
-          {aCount > 5 && <span className="bar-stack-count">{aCount}</span>}
         </div>
-        <div className="bar-lane bar-lane-b">
-          {Array.from({ length: visibleB }).map((_, i) => (
-            <span key={`b-${i}`} className="checker checker-b bar-checker" />
-          ))}
-          {bCount > 5 && <span className="bar-stack-count">{bCount}</span>}
+
+        <div className={`barStackBottom ${playerStackSelected ? 'barForcedSelected' : ''}`} aria-hidden="true">
+          {Array.from({ length: aCount }).map((_, i) => {
+            const isInteractivePlayerChecker = i === 0 && !!onPlayerCheckerClick;
+            const playerCheckerClassName = `checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'checker-movable' : ''} ${isInteractivePlayerChecker ? 'barCheckerInteractive' : ''}`;
+
+            if (!isInteractivePlayerChecker) {
+              return <span key={`a-${i}`} className={playerCheckerClassName} style={{ zIndex: aCount - i }} />;
+            }
+
+            return (
+              <button
+                key={`a-${i}`}
+                type="button"
+                className={`${playerCheckerClassName} bar-checker-button`}
+                style={{ zIndex: aCount - i }}
+                onClick={onPlayerCheckerClick}
+                aria-label="Select checker on bar"
+              />
+            );
+          })}
         </div>
       </div>
-      <div className="bar-counts">
-        <span>A {aCount}</span>
-        <span>B {bCount}</span>
-      </div>
-    </button>
+    </div>
   );
 }
 
@@ -284,7 +322,7 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
     <button
       ref={trayRef}
       type="button"
-      className={`bearoff-tray ${highlighted ? 'highlighted' : ''} ${className}`.trim()}
+      className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${className}`.trim()}
       onClick={onClick}
       aria-label={`${label} bear off`}
     >
@@ -298,15 +336,23 @@ export default function App() {
   const [game, setGame] = useState(loadInitial);
   const [selectedSource, setSelectedSource] = useState(null);
   const [diceAnimKey, setDiceAnimKey] = useState(0);
+  const [isBoardDiceRolling, setIsBoardDiceRolling] = useState(false);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
+  const [openingRollDisplay, setOpeningRollDisplay] = useState(null);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
   const bearOffRefs = useRef({ A: null, B: null });
+  const boardDiceRollTimerRef = useRef(null);
+  const hasInitializedDiceAnimationRef = useRef(false);
+  const openingSequenceIdRef = useRef(0);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
+  const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
+  const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
+  const computerPipCount = useMemo(() => calculatePipCount(game, PLAYER_B), [game]);
 
   const movesBySource = useMemo(() => {
     const map = new Map();
@@ -320,11 +366,21 @@ export default function App() {
     return map;
   }, [legalMoves]);
 
+  const forcedBarSelection =
+    !game.winner &&
+    !isBoardDiceRolling &&
+    !isAnimatingMove &&
+    game.currentPlayer === PLAYER_A &&
+    game.dice.remaining.length > 0 &&
+    game.bar.A > 0;
+
+  const activeSelectedSource = selectedSource;
+
   const moveOptionsForSelected = useMemo(() => {
-    if (selectedSource == null) {
+    if (activeSelectedSource == null) {
       return [];
     }
-    const sourceMoves = movesBySource.get(sourceKey(selectedSource)) ?? [];
+    const sourceMoves = movesBySource.get(sourceKey(activeSelectedSource)) ?? [];
     if (!sourceMoves.length) {
       return [];
     }
@@ -356,15 +412,28 @@ export default function App() {
     }
 
     return options;
-  }, [game, movesBySource, selectedSource]);
+  }, [activeSelectedSource, game, movesBySource]);
 
   const destinationSet = useMemo(() => {
+    if (isBoardDiceRolling) {
+      return new Set();
+    }
     const set = new Set();
     for (const option of moveOptionsForSelected) {
       set.add(destinationKey(option.to));
     }
     return set;
-  }, [moveOptionsForSelected]);
+  }, [isBoardDiceRolling, moveOptionsForSelected]);
+
+  const movableSourceSet = useMemo(() => {
+    const set = new Set();
+    for (const move of legalMoves) {
+      set.add(sourceKey(move.from));
+    }
+    return set;
+  }, [legalMoves]);
+
+  const showMovableSources = !isBoardDiceRolling && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
@@ -382,16 +451,44 @@ export default function App() {
 
   const diceSignature = game.dice.values.join('-');
   useEffect(() => {
-    if (game.dice.values.length === 2) {
-      setDiceAnimKey((k) => k + 2);
+    if (!hasInitializedDiceAnimationRef.current) {
+      hasInitializedDiceAnimationRef.current = true;
+      setIsBoardDiceRolling(false);
+      return undefined;
     }
+
+    if (boardDiceRollTimerRef.current) {
+      window.clearTimeout(boardDiceRollTimerRef.current);
+      boardDiceRollTimerRef.current = null;
+    }
+
+    if (game.dice.values.length === 2) {
+      setIsBoardDiceRolling(true);
+      setDiceAnimKey((k) => k + 2);
+      boardDiceRollTimerRef.current = window.setTimeout(() => {
+        setIsBoardDiceRolling(false);
+        boardDiceRollTimerRef.current = null;
+      }, BOARD_DICE_ROLL_MS);
+      return undefined;
+    }
+
+    setIsBoardDiceRolling(false);
+    return undefined;
   }, [diceSignature]);
 
   useEffect(() => {
-    if (game.winner || !isComputerTurn) {
+    return () => {
+      if (boardDiceRollTimerRef.current) {
+        window.clearTimeout(boardDiceRollTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (game.winner || game.openingRollPending || !isComputerTurn) {
       return undefined;
     }
-    if (isAnimatingMove) {
+    if (isAnimatingMove || isBoardDiceRolling) {
       return undefined;
     }
 
@@ -401,6 +498,7 @@ export default function App() {
           if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
             return prev;
           }
+          startBoardDiceRollVisibilityWindow();
           return pushUndoState(prev, rollDice(prev));
         });
         return;
@@ -416,10 +514,10 @@ export default function App() {
         return;
       }
       void performMoveSequence(game, [aiMove]);
-    }, 420);
+    }, COMPUTER_TURN_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [game, isComputerTurn, isAnimatingMove]);
+  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
 
   function commit(next) {
     setGame(next);
@@ -429,20 +527,74 @@ export default function App() {
     return pushUndoState(game, nextState);
   }
 
+  function startBoardDiceRollVisibilityWindow() {
+    if (boardDiceRollTimerRef.current) {
+      window.clearTimeout(boardDiceRollTimerRef.current);
+    }
+    setIsBoardDiceRolling(true);
+    boardDiceRollTimerRef.current = window.setTimeout(() => {
+      setIsBoardDiceRolling(false);
+      boardDiceRollTimerRef.current = null;
+    }, BOARD_DICE_ROLL_MS);
+  }
+
+  async function runOpeningRollSequence(forced = null) {
+    const sequenceId = openingSequenceIdRef.current + 1;
+    openingSequenceIdRef.current = sequenceId;
+
+    const playerDie = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
+    const computerDie = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+
+    setOpeningRollDisplay({ playerDie, computerDie: null, message: `You rolled ${playerDie}.` });
+    await wait(OPENING_ROLL_STEP_DELAY_MS);
+    if (openingSequenceIdRef.current !== sequenceId) return;
+
+    setOpeningRollDisplay({ playerDie, computerDie, message: `Computer rolled ${computerDie}.` });
+    await wait(OPENING_ROLL_STEP_DELAY_MS);
+    if (openingSequenceIdRef.current !== sequenceId) return;
+
+    const tied = playerDie === computerDie;
+    const openerMessage = tied
+      ? `Tie at ${playerDie}-${computerDie}. Roll again.`
+      : playerDie > computerDie
+        ? 'You go first.'
+        : 'The computer goes first.';
+
+    setOpeningRollDisplay({ playerDie, computerDie, message: openerMessage });
+    await wait(OPENING_ROLL_STEP_DELAY_MS);
+    if (openingSequenceIdRef.current !== sequenceId) return;
+
+    setOpeningRollDisplay(null);
+    setGame((prev) => {
+      if (prev.winner || !prev.openingRollPending || prev.dice.remaining.length > 0) {
+        return prev;
+      }
+      return pushUndoState(prev, rollDice(prev, [playerDie, computerDie]));
+    });
+    setSelectedSource(null);
+  }
+
   function handleRoll(forced = null) {
-    if (isAnimatingMove || (isComputerTurn && !forced)) {
+    if (isAnimatingMove || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) {
       return;
     }
+
+    if (game.openingRollPending) {
+      void runOpeningRollSequence(forced);
+      return;
+    }
+
     const rolled = rollDice(game, forced);
     if (rolled === game) {
       return;
     }
+    startBoardDiceRollVisibilityWindow();
     commit(withUndo(rolled));
     setSelectedSource(null);
   }
 
   function handleSelectSource(source) {
-    if (isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) {
+    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) {
       return;
     }
 
@@ -596,7 +748,7 @@ export default function App() {
   }
 
   function moveToDestination(destination) {
-    if (isAnimatingMove || isComputerTurn || selectedSource == null) {
+    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || activeSelectedSource == null) {
       return;
     }
 
@@ -617,6 +769,8 @@ export default function App() {
     if (isAnimatingMove) {
       return;
     }
+    openingSequenceIdRef.current += 1;
+    setOpeningRollDisplay(null);
     const reset = createInitialState();
     commit(withUndo(reset));
     setSelectedSource(null);
@@ -626,6 +780,8 @@ export default function App() {
     if (isAnimatingMove) {
       return;
     }
+    openingSequenceIdRef.current += 1;
+    setOpeningRollDisplay(null);
     const reset = {
       ...createInitialState(),
       undoStack: game.undoStack,
@@ -639,6 +795,8 @@ export default function App() {
     if (isAnimatingMove) {
       return;
     }
+    openingSequenceIdRef.current += 1;
+    setOpeningRollDisplay(null);
     const previous = undo(game);
     commit(previous);
     setSelectedSource(null);
@@ -648,6 +806,8 @@ export default function App() {
     if (isAnimatingMove) {
       return;
     }
+    openingSequenceIdRef.current += 1;
+    setOpeningRollDisplay(null);
     window.localStorage.removeItem(STORAGE_KEY);
     commit(createInitialState());
     setSelectedSource(null);
@@ -668,7 +828,7 @@ export default function App() {
     }));
   }
 
-  const statusText = isAnimatingMove ? `${playerLabel(game.currentPlayer)} moving...` : describeRequiredAction(game, legalMoves);
+  const statusText = openingRollDisplay?.message ?? (isAnimatingMove ? `${playerLabel(game.currentPlayer)} moving...` : describeRequiredAction(game, legalMoves));
 
   function renderPoint(point, isTop) {
     return (
@@ -684,13 +844,14 @@ export default function App() {
             pointRefs.current.delete(point);
           }
         }}
-        selected={selectedSource === point}
+        selected={activeSelectedSource === point}
         highlighted={destinationSet.has(String(point))}
+        movable={showMovableSources && movableSourceSet.has(String(point))}
         onClick={() => {
           if (isAnimatingMove || isComputerTurn) {
             return;
           }
-          if (selectedSource != null && destinationSet.has(String(point))) {
+          if (activeSelectedSource != null && destinationSet.has(String(point))) {
             moveToDestination(point);
           } else {
             handleSelectSource(point);
@@ -710,11 +871,11 @@ export default function App() {
       <section className="status" aria-live="polite">
         <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
         <div><strong>Action:</strong> {statusText}</div>
-        <DicePanel game={game} diceAnimKey={diceAnimKey} />
+        <DicePanel game={game} isBoardDiceRolling={isBoardDiceRolling} openingRollDisplay={openingRollDisplay} />
       </section>
 
       <section className="controls" aria-label="Game controls">
-        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || game.dice.remaining.length > 0}>
+        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}>
           Roll Dice
         </button>
         <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove}>New Game</button>
@@ -726,29 +887,38 @@ export default function App() {
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
         <div className="board-shell">
           <div className="board-surface">
+            <div className="pip-board-row" aria-label="Pip counts">
+              <div className="pip-box pip-box-computer">
+                <span className="pip-box-label">Computer</span>
+                <span className="pip-box-value">PIP: {computerPipCount}</span>
+              </div>
+              <div className="pip-box pip-box-player">
+                <span className="pip-box-label">Player</span>
+                <span className="pip-box-value">PIP: {playerPipCount}</span>
+              </div>
+            </div>
             <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
             <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
 
             <Bar
               barRef={barRef}
               state={game}
-              selected={selectedSource === 'bar'}
+              playerStackSelected={activeSelectedSource === 'bar'}
+              playerStackMovable={showMovableSources && movableSourceSet.has('bar')}
               highlighted={destinationSet.has('bar')}
-              onClick={() => {
+              movable={showMovableSources && movableSourceSet.has('bar')}
+              onClick={() => {}}
+              onPlayerCheckerClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
                 }
-                if (selectedSource != null && destinationSet.has('bar')) {
-                  moveToDestination('bar');
-                } else {
-                  handleSelectSource('bar');
-                }
+                handleSelectSource('bar');
               }}
             />
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-            <BoardDice game={game} diceAnimKey={diceAnimKey} />
+            <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
           </div>
 
           <aside className="home-rail" aria-label="Bear off area">
@@ -827,7 +997,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => handleRoll([game.dev.dieA, game.dev.dieB])}
-              disabled={game.winner || isComputerTurn || isAnimatingMove || game.dice.remaining.length > 0}
+              disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}
             >
               Set Dice + Roll
             </button>
