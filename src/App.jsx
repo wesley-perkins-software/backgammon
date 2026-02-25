@@ -67,6 +67,9 @@ function describeRequiredAction(state, legalMoves) {
   if (state.winner) {
     return `${playerLabel(state.winner)} wins.`;
   }
+  if (state.openingRollPending) {
+    return 'Opening roll: click Roll Dice to roll one die for Player and one for Computer.';
+  }
   if (state.dice.remaining.length === 0) {
     return computerTurn ? 'Computer is rolling...' : `${turnName}: roll dice.`;
   }
@@ -453,7 +456,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (game.winner || !isComputerTurn) {
+    if (game.winner || game.openingRollPending || !isComputerTurn) {
       return undefined;
     }
     if (isAnimatingMove || isBoardDiceRolling) {
