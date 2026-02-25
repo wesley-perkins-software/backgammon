@@ -859,10 +859,6 @@ export default function App() {
       <section className="status" aria-live="polite">
         <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
         <div><strong>Action:</strong> {statusText}</div>
-        <div className="pip-count" aria-label="Pip counts">
-          <span><strong>Player pips:</strong> {playerPipCount}</span>
-          <span><strong>Computer pips:</strong> {computerPipCount}</span>
-        </div>
         <DicePanel game={game} isBoardDiceRolling={isBoardDiceRolling} openingRollDisplay={openingRollDisplay} />
       </section>
 
@@ -879,6 +875,16 @@ export default function App() {
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
         <div className="board-shell">
           <div className="board-surface">
+            <div className="pip-board-row" aria-label="Pip counts">
+              <div className="pip-box pip-box-computer">
+                <span className="pip-box-label">Computer</span>
+                <span className="pip-box-value">PIP: {computerPipCount}</span>
+              </div>
+              <div className="pip-box pip-box-player">
+                <span className="pip-box-label">Player</span>
+                <span className="pip-box-value">PIP: {playerPipCount}</span>
+              </div>
+            </div>
             <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
             <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
 
