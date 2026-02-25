@@ -77,8 +77,9 @@ export function createInitialState() {
     currentPlayer: PLAYER_A,
     dice: { values: [], remaining: [] },
     winner: null,
+    openingRollPending: true,
     undoStack: [],
-    statusText: 'Roll dice to begin.',
+    statusText: 'Roll to determine who goes first.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
 }
@@ -454,6 +455,31 @@ export function rollDice(state, forcedValues = null) {
     return state;
   }
 
+  if (state.openingRollPending) {
+    const openerA = forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
+    const openerB = forcedValues?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+
+    if (openerA === openerB) {
+      return {
+        ...cloneState(state),
+        dice: { values: [openerA, openerB], remaining: [] },
+        statusText: `Opening roll tied at ${openerA}-${openerB}. Roll again.`
+      };
+    }
+
+    const startingPlayer = openerA > openerB ? PLAYER_A : PLAYER_B;
+    return {
+      ...cloneState(state),
+      currentPlayer: startingPlayer,
+      openingRollPending: false,
+      dice: {
+        values: [openerA, openerB],
+        remaining: [openerA, openerB]
+      },
+      statusText: `${playerLabel(startingPlayer)} starts with ${openerA} and ${openerB}.`
+    };
+  }
+
   const d1 = forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
   const d2 = forcedValues?.[1] ?? (Math.floor(Math.random() * 6) + 1);
   const remaining = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
@@ -569,6 +595,7 @@ export function restoreState(raw) {
     return {
       ...base,
       ...parsed,
+      openingRollPending: typeof parsed.openingRollPending === 'boolean' ? parsed.openingRollPending : base.openingRollPending,
       statusText: typeof parsed.statusText === 'string' ? parsed.statusText : base.statusText,
       dev: isPlainObject(parsed.dev)
         ? {
