@@ -63,7 +63,7 @@ function loadInitial() {
   return restoreState(raw) ?? createInitialState();
 }
 
-function getRolledDiceWithUsage(game) {
+function getRolledDiceWithUsage(game, { expandDoubles = true } = {}) {
   if (game.dice.values.length !== 2) {
     return [];
   }
@@ -74,7 +74,7 @@ function getRolledDiceWithUsage(game) {
   }
 
   const displayDiceValues =
-    game.dice.values[0] === game.dice.values[1]
+    expandDoubles && game.dice.values[0] === game.dice.values[1]
       ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
       : game.dice.values;
 
@@ -165,8 +165,10 @@ function DicePanel({ game, isBoardDiceRolling, openingRollDisplay }) {
   );
 }
 
-function BoardDice({ game, diceAnimKey }) {
-  const rolledDiceWithUsage = getRolledDiceWithUsage(game);
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
+  const rolledDiceWithUsage = getRolledDiceWithUsage(game, {
+    expandDoubles: !isBoardDiceRolling
+  });
   if (rolledDiceWithUsage.length === 0) {
     return null;
   }
@@ -916,7 +918,7 @@ export default function App() {
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-            <BoardDice game={game} diceAnimKey={diceAnimKey} />
+            <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
           </div>
 
           <aside className="home-rail" aria-label="Bear off area">
