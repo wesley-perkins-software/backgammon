@@ -6,6 +6,7 @@ import {
   applyMove,
   chooseComputerMove,
   chooseMoveForDestination,
+  calculatePipCount,
   computeLegalMoves,
   createInitialState,
   playerLabel,
@@ -338,6 +339,8 @@ export default function App() {
   const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
+  const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
+  const computerPipCount = useMemo(() => calculatePipCount(game, PLAYER_B), [game]);
 
   const movesBySource = useMemo(() => {
     const map = new Map();
@@ -856,6 +859,10 @@ export default function App() {
       <section className="status" aria-live="polite">
         <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
         <div><strong>Action:</strong> {statusText}</div>
+        <div className="pip-count" aria-label="Pip counts">
+          <span><strong>Player pips:</strong> {playerPipCount}</span>
+          <span><strong>Computer pips:</strong> {computerPipCount}</span>
+        </div>
         <DicePanel game={game} isBoardDiceRolling={isBoardDiceRolling} openingRollDisplay={openingRollDisplay} />
       </section>
 

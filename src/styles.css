@@ -67,9 +67,17 @@ body {
   border-radius: 0.7rem;
   padding: 0.8rem;
   display: grid;
-  grid-template-columns: minmax(180px, 230px) 1fr auto;
+  grid-template-columns: minmax(180px, 230px) 1fr auto auto;
   gap: 0.8rem;
   align-items: center;
+}
+
+.pip-count {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  justify-self: end;
+  text-align: right;
 }
 
 .controls {
@@ -814,7 +822,15 @@ button:focus-visible {
     gap: 0.55rem;
   }
 
-  .controls {
+  .pip-count {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  justify-self: end;
+  text-align: right;
+}
+
+.controls {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
@@ -914,7 +930,15 @@ button:focus-visible {
 }
 
 @media (max-width: 420px) {
-  .controls {
+  .pip-count {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  justify-self: end;
+  text-align: right;
+}
+
+.controls {
     grid-template-columns: 1fr;
   }
 
