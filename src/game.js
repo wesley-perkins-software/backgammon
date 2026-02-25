@@ -524,6 +524,21 @@ export function playerLabel(player) {
   return player === PLAYER_A ? 'Player' : 'Computer';
 }
 
+export function calculatePipCount(state, player) {
+  const pointDistance = state.points.reduce((total, value, index) => {
+    if (player === PLAYER_A && value > 0) {
+      return total + value * (index + 1);
+    }
+    if (player === PLAYER_B && value < 0) {
+      return total + Math.abs(value) * (24 - index);
+    }
+    return total;
+  }, 0);
+
+  const barDistance = state.bar[player] * 25;
+  return pointDistance + barDistance;
+}
+
 function isPlainObject(v) {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }

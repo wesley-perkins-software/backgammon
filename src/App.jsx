@@ -6,6 +6,7 @@ import {
   applyMove,
   chooseComputerMove,
   chooseMoveForDestination,
+  calculatePipCount,
   computeLegalMoves,
   createInitialState,
   playerLabel,
@@ -338,6 +339,8 @@ export default function App() {
   const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
+  const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
+  const computerPipCount = useMemo(() => calculatePipCount(game, PLAYER_B), [game]);
 
   const movesBySource = useMemo(() => {
     const map = new Map();
@@ -872,6 +875,16 @@ export default function App() {
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
         <div className="board-shell">
           <div className="board-surface">
+            <div className="pip-board-row" aria-label="Pip counts">
+              <div className="pip-box pip-box-computer">
+                <span className="pip-box-label">Computer</span>
+                <span className="pip-box-value">PIP: {computerPipCount}</span>
+              </div>
+              <div className="pip-box pip-box-player">
+                <span className="pip-box-label">Player</span>
+                <span className="pip-box-value">PIP: {playerPipCount}</span>
+              </div>
+            </div>
             <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
             <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
 
