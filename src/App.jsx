@@ -63,6 +63,31 @@ function loadInitial() {
   return restoreState(raw) ?? createInitialState();
 }
 
+function getRolledDiceWithUsage(game) {
+  if (game.dice.values.length !== 2) {
+    return [];
+  }
+
+  const remainingCounts = {};
+  for (const die of game.dice.remaining) {
+    remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
+  }
+
+  const displayDiceValues =
+    game.dice.values[0] === game.dice.values[1]
+      ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
+      : game.dice.values;
+
+  return displayDiceValues.map((die) => {
+    const available = remainingCounts[die] ?? 0;
+    if (available > 0) {
+      remainingCounts[die] = available - 1;
+      return { value: die, used: false };
+    }
+    return { value: die, used: true };
+  });
+}
+
 function describeRequiredAction(state, legalMoves) {
   const computerTurn = state.currentPlayer === PLAYER_B;
   const turnName = computerTurn ? 'Computer' : playerLabel(state.currentPlayer);
@@ -129,24 +154,7 @@ function DicePanel({ game, isBoardDiceRolling, openingRollDisplay }) {
     return <div className="dice-panel" aria-label="Dice" />;
   }
 
-  const remainingCounts = {};
-  for (const die of game.dice.remaining) {
-    remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
-  }
-
-  const displayDiceValues =
-    game.dice.values.length === 2 && game.dice.values[0] === game.dice.values[1]
-      ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
-      : game.dice.values;
-
-  const rolledDiceWithUsage = displayDiceValues.map((die) => {
-    const available = remainingCounts[die] ?? 0;
-    if (available > 0) {
-      remainingCounts[die] = available - 1;
-      return { value: die, used: false };
-    }
-    return { value: die, used: true };
-  });
+  const rolledDiceWithUsage = getRolledDiceWithUsage(game);
 
   return (
     <div className="dice-panel" aria-label="Dice">
@@ -158,7 +166,8 @@ function DicePanel({ game, isBoardDiceRolling, openingRollDisplay }) {
 }
 
 function BoardDice({ game, diceAnimKey }) {
-  if (game.dice.values.length !== 2) {
+  const rolledDiceWithUsage = getRolledDiceWithUsage(game);
+  if (rolledDiceWithUsage.length === 0) {
     return null;
   }
 
@@ -195,11 +204,12 @@ function BoardDice({ game, diceAnimKey }) {
 
   return (
     <div className="board-dice-overlay" aria-hidden="true">
-      {[game.dice.values[0], game.dice.values[1]].map((dieValue, idx) => {
+      {rolledDiceWithUsage.map((die, idx) => {
+        const dieValue = die.value;
         const finalValue = Math.min(6, Math.max(1, Number(dieValue) || 1));
         const finalOrientation = orientationByValue[finalValue];
         return (
-          <div key={`board-die-wrap-${idx}`} className="board-die-perspective">
+          <div key={`board-die-wrap-${idx}`} className={`board-die-perspective ${die.used ? 'board-die-used' : ''}`.trim()}>
             <div
               key={`board-die-${idx}-${finalValue}-${diceAnimKey + 2000 + idx}`}
               className="board-die-cube"
