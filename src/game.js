@@ -77,8 +77,10 @@ export function createInitialState() {
     currentPlayer: PLAYER_A,
     dice: { values: [], remaining: [] },
     winner: null,
+    openingRollPending: true,
+    openingRoll: { playerDie: null, computerDie: null },
     undoStack: [],
-    statusText: 'Roll dice to begin.',
+    statusText: 'Roll dice to determine who goes first.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
 }
@@ -454,6 +456,49 @@ export function rollDice(state, forcedValues = null) {
     return state;
   }
 
+  if (state.openingRollPending) {
+    const opening = state.openingRoll ?? { playerDie: null, computerDie: null };
+
+    if (opening.playerDie == null) {
+      const playerDie = forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
+      return {
+        ...cloneState(state),
+        currentPlayer: PLAYER_B,
+        dice: { values: [playerDie], remaining: [] },
+        openingRoll: { playerDie, computerDie: null },
+        statusText: `Player rolled ${playerDie}. Computer rolling...`
+      };
+    }
+
+    if (opening.computerDie == null) {
+      const computerDie = forcedValues?.[1] ?? forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
+      const playerDie = opening.playerDie;
+
+      if (playerDie === computerDie) {
+        return {
+          ...cloneState(state),
+          currentPlayer: PLAYER_A,
+          dice: { values: [playerDie, computerDie], remaining: [] },
+          openingRoll: { playerDie: null, computerDie: null },
+          statusText: `Opening roll tied at ${playerDie}-${computerDie}. Roll again.`
+        };
+      }
+
+      const startingPlayer = playerDie > computerDie ? PLAYER_A : PLAYER_B;
+      return {
+        ...cloneState(state),
+        currentPlayer: startingPlayer,
+        openingRollPending: false,
+        dice: {
+          values: [playerDie, computerDie],
+          remaining: [playerDie, computerDie]
+        },
+        openingRoll: { playerDie, computerDie },
+        statusText: `${playerLabel(startingPlayer)} starts with ${playerDie} and ${computerDie}.`
+      };
+    }
+  }
+
   const d1 = forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
   const d2 = forcedValues?.[1] ?? (Math.floor(Math.random() * 6) + 1);
   const remaining = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
@@ -569,6 +614,16 @@ export function restoreState(raw) {
     return {
       ...base,
       ...parsed,
+      openingRollPending: typeof parsed.openingRollPending === 'boolean' ? parsed.openingRollPending : base.openingRollPending,
+      openingRoll:
+        isPlainObject(parsed.openingRoll)
+        && (parsed.openingRoll.playerDie == null || Number.isInteger(parsed.openingRoll.playerDie))
+        && (parsed.openingRoll.computerDie == null || Number.isInteger(parsed.openingRoll.computerDie))
+          ? {
+              playerDie: parsed.openingRoll.playerDie ?? null,
+              computerDie: parsed.openingRoll.computerDie ?? null
+            }
+          : base.openingRoll,
       statusText: typeof parsed.statusText === 'string' ? parsed.statusText : base.statusText,
       dev: isPlainObject(parsed.dev)
         ? {

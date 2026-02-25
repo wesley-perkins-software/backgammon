@@ -67,6 +67,16 @@ function describeRequiredAction(state, legalMoves) {
   if (state.winner) {
     return `${playerLabel(state.winner)} wins.`;
   }
+  if (state.openingRollPending) {
+    const opening = state.openingRoll ?? { playerDie: null, computerDie: null };
+    if (opening.playerDie == null) {
+      return 'Roll dice to determine who goes first.';
+    }
+    if (opening.computerDie == null) {
+      return 'Computer rolling...';
+    }
+    return state.statusText;
+  }
   if (state.dice.remaining.length === 0) {
     return computerTurn ? 'Computer is rolling...' : `${turnName}: roll dice.`;
   }
@@ -75,6 +85,9 @@ function describeRequiredAction(state, legalMoves) {
   }
   if (legalMoves.length === 0) {
     return `${turnName} has no legal moves.`;
+  }
+  if (computerTurn && typeof state.statusText === 'string' && state.statusText.includes('starts with')) {
+    return state.statusText;
   }
   if (computerTurn) {
     return 'Computer is choosing a move...';
@@ -110,13 +123,8 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
 }
 
 function DicePanel({ game, isBoardDiceRolling }) {
-  if (isBoardDiceRolling || game.dice.values.length !== 2) {
+  if (isBoardDiceRolling || game.dice.values.length === 0) {
     return <div className="dice-panel" aria-label="Dice" />;
-  }
-
-  const remainingCounts = {};
-  for (const die of game.dice.remaining) {
-    remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
   }
 
   const displayDiceValues =
@@ -124,14 +132,23 @@ function DicePanel({ game, isBoardDiceRolling }) {
       ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
       : game.dice.values;
 
-  const rolledDiceWithUsage = displayDiceValues.map((die) => {
-    const available = remainingCounts[die] ?? 0;
-    if (available > 0) {
-      remainingCounts[die] = available - 1;
-      return { value: die, used: false };
-    }
-    return { value: die, used: true };
-  });
+  const rolledDiceWithUsage = game.openingRollPending
+    ? displayDiceValues.map((die) => ({ value: die, used: false }))
+    : (() => {
+        const remainingCounts = {};
+        for (const die of game.dice.remaining) {
+          remainingCounts[die] = (remainingCounts[die] ?? 0) + 1;
+        }
+
+        return displayDiceValues.map((die) => {
+          const available = remainingCounts[die] ?? 0;
+          if (available > 0) {
+            remainingCounts[die] = available - 1;
+            return { value: die, used: false };
+          }
+          return { value: die, used: true };
+        });
+      })();
 
   return (
     <div className="dice-panel" aria-label="Dice">
@@ -453,10 +470,37 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (game.winner || !isComputerTurn) {
+    if (game.winner) {
       return undefined;
     }
-    if (isAnimatingMove || isBoardDiceRolling) {
+
+    if (game.openingRollPending) {
+      const opening = game.openingRoll ?? { playerDie: null, computerDie: null };
+      if (opening.playerDie == null || opening.computerDie != null || game.currentPlayer !== PLAYER_B) {
+        return undefined;
+      }
+
+      const timer = window.setTimeout(() => {
+        setGame((prev) => {
+          const prevOpening = prev.openingRoll ?? { playerDie: null, computerDie: null };
+          if (
+            prev.winner
+            || !prev.openingRollPending
+            || prev.currentPlayer !== PLAYER_B
+            || prevOpening.playerDie == null
+            || prevOpening.computerDie != null
+          ) {
+            return prev;
+          }
+          startBoardDiceRollVisibilityWindow();
+          return pushUndoState(prev, rollDice(prev));
+        });
+      }, 420);
+
+      return () => window.clearTimeout(timer);
+    }
+
+    if (!isComputerTurn || isAnimatingMove || isBoardDiceRolling) {
       return undefined;
     }
 
