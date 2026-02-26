@@ -280,15 +280,15 @@ button:focus-visible {
 
 .board-dice-overlay {
   position: absolute;
-  left: 75%;
+  left: calc(50% + (var(--bar-column-width) / 2) + 0.42rem);
+  right: 0;
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  width: 110px;
   pointer-events: none;
   z-index: 10;
 }
@@ -822,9 +822,7 @@ button:focus-visible {
   }
 
   .board-dice-overlay {
-    left: 75%;
     gap: 0.4rem;
-    width: 90px;
   }
 
   .board-die-perspective {
@@ -970,9 +968,7 @@ button:focus-visible {
 
   .board-dice-overlay {
     top: 50%;
-    left: 76%;
     gap: 0.28rem;
-    width: 70px;
   }
 
   .board-die-perspective {

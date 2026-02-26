@@ -173,6 +173,16 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
     return null;
   }
 
+  if (!isBoardDiceRolling) {
+    return (
+      <div className="board-dice-overlay" aria-hidden="true">
+        {rolledDiceWithUsage.map((die, idx) => (
+          <DieFace key={`board-static-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />
+        ))}
+      </div>
+    );
+  }
+
   const pipsByValue = {
     1: [5],
     2: [1, 9],
