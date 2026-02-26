@@ -280,13 +280,14 @@ button:focus-visible {
 
 .board-dice-overlay {
   position: absolute;
-  right: 0.8rem;
+  left: calc(50% + (var(--bar-column-width) / 2) + 0.42rem);
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0.55rem;
   pointer-events: none;
   z-index: 10;
@@ -821,7 +822,6 @@ button:focus-visible {
   }
 
   .board-dice-overlay {
-    right: 0.7rem;
     gap: 0.4rem;
   }
 
@@ -968,7 +968,6 @@ button:focus-visible {
 
   .board-dice-overlay {
     top: 50%;
-    right: 0.4rem;
     gap: 0.28rem;
   }
 
