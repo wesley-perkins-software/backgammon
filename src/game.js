@@ -450,7 +450,8 @@ export function applyMove(state, move) {
   return next;
 }
 
-export function rollDice(state, forcedValues = null) {
+export function rollDice(state, forcedValues = null, options = {}) {
+  const { autoPassNoMoves = true } = options;
   if (state.winner || state.dice.remaining.length > 0) {
     return state;
   }
@@ -494,19 +495,30 @@ export function rollDice(state, forcedValues = null) {
   };
 
   if (computeLegalMoves(next).length === 0) {
-    next = endTurn(withStatus(next, `${playerLabel(state.currentPlayer)} has no legal moves. Turn passed.`));
+    if (autoPassNoMoves) {
+      next = endTurn(next, `${playerLabel(state.currentPlayer)} rolled ${d1} and ${d2} but has no legal moves. Turn passed.`);
+    } else {
+      next = {
+        ...next,
+        dice: {
+          values: [d1, d2],
+          remaining: []
+        },
+        statusText: `${playerLabel(state.currentPlayer)} rolled ${d1} and ${d2} but has no legal moves.`
+      };
+    }
   }
 
   return next;
 }
 
-export function endTurn(state) {
+export function endTurn(state, statusTextOverride = null) {
   const nextPlayer = opponent(state.currentPlayer);
   return {
     ...cloneState(state),
     currentPlayer: nextPlayer,
     dice: { values: [], remaining: [] },
-    statusText: `${playerLabel(nextPlayer)} to move. Roll dice.`
+    statusText: statusTextOverride ?? `${playerLabel(nextPlayer)} to move. Roll dice.`
   };
 }
 

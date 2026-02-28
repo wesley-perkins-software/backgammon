@@ -9,6 +9,7 @@ import {
   calculatePipCount,
   computeLegalMoves,
   createInitialState,
+  endTurn,
   playerLabel,
   pushUndoState,
   restoreState,
@@ -300,6 +301,7 @@ export default function App() {
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
   const [openingRollDisplay, setOpeningRollDisplay] = useState(null);
+  const [pendingComputerPass, setPendingComputerPass] = useState(false);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
@@ -458,8 +460,14 @@ export default function App() {
           if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
             return prev;
           }
+          const d1 = Math.floor(Math.random() * 6) + 1;
+          const d2 = Math.floor(Math.random() * 6) + 1;
+          const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
           startBoardDiceRollVisibilityWindow();
-          return pushUndoState(prev, rollDice(prev));
+          if (computeLegalMoves(rolled).length === 0) {
+            setPendingComputerPass(true);
+          }
+          return pushUndoState(prev, rolled);
         });
         return;
       }
@@ -478,6 +486,23 @@ export default function App() {
 
     return () => window.clearTimeout(timer);
   }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
+
+  useEffect(() => {
+    if (!pendingComputerPass || isBoardDiceRolling || isAnimatingMove) {
+      return;
+    }
+
+    setGame((prev) => {
+      if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length > 0) {
+        return prev;
+      }
+
+      const [d1, d2] = prev.dice.values;
+      const passedTurn = endTurn(prev, `${playerLabel(PLAYER_B)} rolled ${d1} and ${d2} but has no legal moves. Turn passed.`);
+      return pushUndoState(prev, passedTurn);
+    });
+    setPendingComputerPass(false);
+  }, [pendingComputerPass, isBoardDiceRolling, isAnimatingMove]);
 
   function commit(next) {
     setGame(next);
@@ -731,6 +756,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
+    setPendingComputerPass(false);
     const reset = createInitialState();
     commit(withUndo(reset));
     setSelectedSource(null);
@@ -742,6 +768,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
+    setPendingComputerPass(false);
     const reset = {
       ...createInitialState(),
       undoStack: game.undoStack,
@@ -757,6 +784,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
+    setPendingComputerPass(false);
     const previous = undo(game);
     commit(previous);
     setSelectedSource(null);
