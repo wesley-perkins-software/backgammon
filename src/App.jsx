@@ -301,7 +301,7 @@ export default function App() {
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
   const [openingRollDisplay, setOpeningRollDisplay] = useState(null);
-  const [pendingComputerPass, setPendingComputerPass] = useState(false);
+  const [computerNoMovePassDeadline, setComputerNoMovePassDeadline] = useState(null);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
@@ -311,7 +311,14 @@ export default function App() {
   const openingSequenceIdRef = useRef(0);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
   const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
-  const showPendingComputerPassRoll = pendingComputerPass && isComputerTurn && game.dice.values.length === 2;
+  const computerNoMovePassScheduled = computerNoMovePassDeadline !== null;
+  const isComputerNoMoveRollAwaitingPass =
+    computerNoMovePassScheduled &&
+    !game.winner &&
+    isComputerTurn &&
+    !game.openingRollPending &&
+    game.dice.values.length === 2 &&
+    game.dice.remaining.length === 0;
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
   const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
@@ -448,7 +455,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (game.winner || game.openingRollPending || !isComputerTurn || pendingComputerPass) {
+    if (game.winner || game.openingRollPending || !isComputerTurn || isComputerNoMoveRollAwaitingPass) {
       return undefined;
     }
     if (isAnimatingMove || isBoardDiceRolling) {
@@ -457,18 +464,16 @@ export default function App() {
 
     const timer = window.setTimeout(() => {
       if (game.dice.remaining.length === 0) {
-        setGame((prev) => {
-          if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
-            return prev;
-          }
-          const d1 = Math.floor(Math.random() * 6) + 1;
-          const d2 = Math.floor(Math.random() * 6) + 1;
-          const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
-          if (computeLegalMoves(rolled).length === 0) {
-            setPendingComputerPass(true);
-          }
-          return pushUndoState(prev, rolled);
-        });
+        if (game.winner || game.currentPlayer !== PLAYER_B) {
+          return;
+        }
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+        const rolled = rollDice(game, [d1, d2], { autoPassNoMoves: false });
+        if (computeLegalMoves(rolled).length === 0) {
+          setComputerNoMovePassDeadline(Date.now() + BOARD_DICE_ROLL_MS);
+        }
+        setGame((prev) => (prev === game ? pushUndoState(prev, rolled) : prev));
         return;
       }
 
@@ -485,24 +490,29 @@ export default function App() {
     }, COMPUTER_TURN_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling, pendingComputerPass]);
+  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling, isComputerNoMoveRollAwaitingPass]);
 
   useEffect(() => {
-    if (!pendingComputerPass || isBoardDiceRolling || isAnimatingMove) {
+    if (!isComputerNoMoveRollAwaitingPass || isAnimatingMove || computerNoMovePassDeadline == null) {
       return;
     }
 
-    setGame((prev) => {
-      if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length > 0) {
-        return prev;
-      }
+    const delayMs = Math.max(0, computerNoMovePassDeadline - Date.now());
+    const timer = window.setTimeout(() => {
+      setGame((prev) => {
+        if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length > 0) {
+          return prev;
+        }
 
-      const [d1, d2] = prev.dice.values;
-      const passedTurn = endTurn(prev, `${playerLabel(PLAYER_B)} rolled ${d1} and ${d2} but has no legal moves. Turn passed.`);
-      return pushUndoState(prev, passedTurn);
-    });
-    setPendingComputerPass(false);
-  }, [pendingComputerPass, isBoardDiceRolling, isAnimatingMove]);
+        const [d1, d2] = prev.dice.values;
+        const passedTurn = endTurn(prev, `${playerLabel(PLAYER_B)} rolled ${d1} and ${d2} but has no legal moves. Turn passed.`);
+        return pushUndoState(prev, passedTurn);
+      });
+      setComputerNoMovePassDeadline(null);
+    }, delayMs);
+
+    return () => window.clearTimeout(timer);
+  }, [isComputerNoMoveRollAwaitingPass, isAnimatingMove, computerNoMovePassDeadline]);
 
   function commit(next) {
     setGame(next);
@@ -756,7 +766,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
-    setPendingComputerPass(false);
+    setComputerNoMovePassDeadline(null);
     const reset = createInitialState();
     commit(withUndo(reset));
     setSelectedSource(null);
@@ -768,7 +778,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
-    setPendingComputerPass(false);
+    setComputerNoMovePassDeadline(null);
     const reset = {
       ...createInitialState(),
       undoStack: game.undoStack,
@@ -784,7 +794,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
-    setPendingComputerPass(false);
+    setComputerNoMovePassDeadline(null);
     const previous = undo(game);
     commit(previous);
     setSelectedSource(null);
@@ -796,6 +806,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
+    setComputerNoMovePassDeadline(null);
     window.localStorage.removeItem(STORAGE_KEY);
     commit(createInitialState());
     setSelectedSource(null);
@@ -896,7 +907,7 @@ export default function App() {
               game={game}
               diceAnimKey={diceAnimKey}
               isBoardDiceRolling={isBoardDiceRolling}
-              showAllDiceAsUnused={showPendingComputerPassRoll}
+              showAllDiceAsUnused={isComputerNoMoveRollAwaitingPass}
             />
           </div>
 
