@@ -116,10 +116,10 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   );
 }
 
-function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused = false }) {
   const rolledDiceWithUsage = getRolledDiceWithUsage(game, {
     expandDoubles: !isBoardDiceRolling
-  });
+  }).map((die) => (showAllDiceAsUnused ? { ...die, used: false } : die));
   if (rolledDiceWithUsage.length === 0) {
     return null;
   }
@@ -311,6 +311,7 @@ export default function App() {
   const openingSequenceIdRef = useRef(0);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
   const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
+  const showPendingComputerPassRoll = pendingComputerPass && isComputerTurn && game.dice.values.length === 2;
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
   const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
@@ -447,7 +448,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (game.winner || game.openingRollPending || !isComputerTurn) {
+    if (game.winner || game.openingRollPending || !isComputerTurn || pendingComputerPass) {
       return undefined;
     }
     if (isAnimatingMove || isBoardDiceRolling) {
@@ -463,7 +464,6 @@ export default function App() {
           const d1 = Math.floor(Math.random() * 6) + 1;
           const d2 = Math.floor(Math.random() * 6) + 1;
           const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
-          startBoardDiceRollVisibilityWindow();
           if (computeLegalMoves(rolled).length === 0) {
             setPendingComputerPass(true);
           }
@@ -485,7 +485,7 @@ export default function App() {
     }, COMPUTER_TURN_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
+  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling, pendingComputerPass]);
 
   useEffect(() => {
     if (!pendingComputerPass || isBoardDiceRolling || isAnimatingMove) {
@@ -892,7 +892,12 @@ export default function App() {
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-            <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
+            <BoardDice
+              game={game}
+              diceAnimKey={diceAnimKey}
+              isBoardDiceRolling={isBoardDiceRolling}
+              showAllDiceAsUnused={showPendingComputerPassRoll}
+            />
           </div>
 
           <aside className="home-rail" aria-label="Bear off area">
