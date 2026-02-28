@@ -842,63 +842,61 @@ export default function App() {
             </div>
           </div>
 
-          <div className="board-and-off">
-            <div className="board-surface">
-              <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
-              <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
+          <div className="board-surface">
+            <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
+            <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
 
-              <Bar
-                barRef={barRef}
-                state={game}
-                playerStackSelected={activeSelectedSource === 'bar'}
-                playerStackMovable={showMovableSources && movableSourceSet.has('bar')}
-                highlighted={destinationSet.has('bar')}
-                movable={showMovableSources && movableSourceSet.has('bar')}
-                onClick={() => {}}
-                onPlayerCheckerClick={() => {
-                  if (isAnimatingMove || isComputerTurn) {
-                    return;
-                  }
-                  handleSelectSource('bar');
-                }}
-              />
+            <Bar
+              barRef={barRef}
+              state={game}
+              playerStackSelected={activeSelectedSource === 'bar'}
+              playerStackMovable={showMovableSources && movableSourceSet.has('bar')}
+              highlighted={destinationSet.has('bar')}
+              movable={showMovableSources && movableSourceSet.has('bar')}
+              onClick={() => {}}
+              onPlayerCheckerClick={() => {
+                if (isAnimatingMove || isComputerTurn) {
+                  return;
+                }
+                handleSelectSource('bar');
+              }}
+            />
 
-              <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
-              <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-              <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
-            </div>
-
-            <aside className="home-rail" aria-label="Bear off area">
-              <BearOffTray
-                label="Computer"
-                className="home-top"
-                trayRef={(node) => {
-                  bearOffRefs.current.B = node;
-                }}
-                count={game.bearOff.B}
-                highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B}
-                onClick={() => {
-                  if (!isAnimatingMove && !isComputerTurn) {
-                    moveToDestination('off');
-                  }
-                }}
-              />
-              <BearOffTray
-                label="Player"
-                className="home-bottom"
-                trayRef={(node) => {
-                  bearOffRefs.current.A = node;
-                }}
-                count={game.bearOff.A}
-                highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A}
-                onClick={() => {
-                  if (!isAnimatingMove && !isComputerTurn) {
-                    moveToDestination('off');
-                  }
-                }}
-              />
-            </aside>
+            <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
+            <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
+            <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
           </div>
+
+          <aside className="home-rail" aria-label="Bear off area">
+            <BearOffTray
+              label="Computer"
+              className="home-top"
+              trayRef={(node) => {
+                bearOffRefs.current.B = node;
+              }}
+              count={game.bearOff.B}
+              highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B}
+              onClick={() => {
+                if (!isAnimatingMove && !isComputerTurn) {
+                  moveToDestination('off');
+                }
+              }}
+            />
+            <BearOffTray
+              label="Player"
+              className="home-bottom"
+              trayRef={(node) => {
+                bearOffRefs.current.A = node;
+              }}
+              count={game.bearOff.A}
+              highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A}
+              onClick={() => {
+                if (!isAnimatingMove && !isComputerTurn) {
+                  moveToDestination('off');
+                }
+              }}
+            />
+          </aside>
         </div>
         {movingChecker && (
           <span
