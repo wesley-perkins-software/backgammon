@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  LEGACY_STORAGE_KEYS,
   PLAYER_A,
   PLAYER_B,
   STORAGE_KEY,
@@ -10,7 +9,6 @@ import {
   calculatePipCount,
   computeLegalMoves,
   createInitialState,
-  getHigherDieRequirement,
   playerLabel,
   pushUndoState,
   restoreState,
@@ -19,26 +17,15 @@ import {
   undo
 } from './game.js';
 
-const BOARD_LAYOUT_BY_HUMAN = {
-  A: {
-    topLeft: [12, 13, 14, 15, 16, 17],
-    topRight: [18, 19, 20, 21, 22, 23],
-    bottomLeft: [11, 10, 9, 8, 7, 6],
-    bottomRight: [5, 4, 3, 2, 1, 0]
-  },
-  B: {
-    topLeft: [11, 10, 9, 8, 7, 6],
-    topRight: [5, 4, 3, 2, 1, 0],
-    bottomLeft: [12, 13, 14, 15, 16, 17],
-    bottomRight: [18, 19, 20, 21, 22, 23]
-  }
-};
-
-const BASE_MOVE_STEP_MS = 210;
-const BASE_MOVE_START_DELAY_MS = 40;
-const BASE_BOARD_DICE_ROLL_MS = 1000;
-const BASE_OPENING_ROLL_STEP_DELAY_MS = 1000;
-const BASE_COMPUTER_TURN_DELAY_MS = 1000;
+const TOP_LEFT = [12, 13, 14, 15, 16, 17];
+const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
+const BOTTOM_LEFT = [11, 10, 9, 8, 7, 6];
+const BOTTOM_RIGHT = [5, 4, 3, 2, 1, 0];
+const MOVE_STEP_MS = 210;
+const MOVE_START_DELAY_MS = 40;
+const BOARD_DICE_ROLL_MS = 1000;
+const OPENING_ROLL_STEP_DELAY_MS = 1000;
+const COMPUTER_TURN_DELAY_MS = 1000;
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -69,18 +56,11 @@ function sourceKey(from) {
 }
 
 function loadInitial() {
-  const keys = [STORAGE_KEY, ...LEGACY_STORAGE_KEYS];
-  for (const key of keys) {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-      continue;
-    }
-    const restored = restoreState(raw);
-    if (restored) {
-      return restored;
-    }
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    return createInitialState();
   }
-  return createInitialState();
+  return restoreState(raw) ?? createInitialState();
 }
 
 function getRolledDiceWithUsage(game, { expandDoubles = true } = {}) {
@@ -108,30 +88,24 @@ function getRolledDiceWithUsage(game, { expandDoubles = true } = {}) {
   });
 }
 
-function describeRequiredAction(state, legalMoves, higherDieRequirement) {
-  const computerTurn = state.currentPlayer !== state.humanPlayer;
-  const turnName = computerTurn ? 'Computer' : playerLabel(state.currentPlayer, state.humanPlayer);
+function describeRequiredAction(state, legalMoves) {
+  const computerTurn = state.currentPlayer === PLAYER_B;
+  const turnName = computerTurn ? 'Computer' : playerLabel(state.currentPlayer);
 
   if (state.winner) {
-    return `${playerLabel(state.winner, state.humanPlayer)} wins.`;
+    return `${playerLabel(state.winner)} wins.`;
   }
   if (state.openingRollPending) {
     return state.statusText;
   }
   if (state.dice.remaining.length === 0) {
-    if (state.statusText.includes('Turn auto-passed.')) {
-      return state.statusText;
-    }
     return computerTurn ? 'Computer is rolling...' : `${turnName}: roll dice.`;
   }
   if (state.bar[state.currentPlayer] > 0) {
-    return `${turnName} must enter from bar.`;
+    return `${turnName} must enter from the bar.`;
   }
   if (legalMoves.length === 0) {
-    return `${turnName} has no legal moves with rolled dice.`;
-  }
-  if (!computerTurn && higherDieRequirement) {
-    return `Higher die required: use ${higherDieRequirement.requiredDie} before ${higherDieRequirement.blockedDie}.`;
+    return `${turnName} has no legal moves.`;
   }
   if (computerTurn) {
     return 'Computer is choosing a move...';
@@ -300,22 +274,9 @@ function Point({ index, value, selected, highlighted, movable, onClick, isTop, p
   );
 }
 
-function Bar({
-  state,
-  humanPlayer,
-  playerStackSelected,
-  playerStackMovable,
-  highlighted,
-  movable,
-  onClick,
-  onHumanCheckerClick,
-  barRef
-}) {
+function Bar({ state, playerStackSelected, playerStackMovable, highlighted, movable, onClick, onPlayerCheckerClick, barRef }) {
   const aCount = state.bar.A;
   const bCount = state.bar.B;
-  const interactiveOnTop = humanPlayer === PLAYER_B;
-  const topCount = bCount;
-  const bottomCount = aCount;
 
   return (
     <div className="bar-lane-wrap">
@@ -330,42 +291,32 @@ function Bar({
       </button>
 
       <div className="bar-checker-overlay" aria-hidden="true">
-        <div className={`barStackTop ${playerStackSelected && interactiveOnTop ? 'barForcedSelected' : ''}`} aria-hidden="true">
-          {Array.from({ length: topCount }).map((_, i) => {
-            const isInteractive = interactiveOnTop && i === 0 && !!onHumanCheckerClick;
-            const className = `checker checker-b bar-checker ${playerStackSelected && interactiveOnTop ? 'barCheckerSelected' : ''} ${playerStackMovable && interactiveOnTop && i === 0 ? 'checker-movable' : ''} ${isInteractive ? 'barCheckerInteractive' : ''}`;
-            if (!isInteractive) {
-              return <span key={`b-${i}`} className={className} style={{ zIndex: topCount - i }} />;
-            }
-            return (
-              <button
-                key={`b-${i}`}
-                type="button"
-                className={`${className} bar-checker-button`}
-                style={{ zIndex: topCount - i }}
-                onClick={onHumanCheckerClick}
-                aria-label="Select checker on bar"
-              />
-            );
-          })}
+        <div className="barStackTop" aria-hidden="true">
+          {Array.from({ length: bCount }).map((_, i) => (
+            <span
+              key={`b-${i}`}
+              className="checker checker-b bar-checker"
+              style={{ zIndex: bCount - i }}
+            />
+          ))}
         </div>
 
-        <div className={`barStackBottom ${playerStackSelected && !interactiveOnTop ? 'barForcedSelected' : ''}`} aria-hidden="true">
-          {Array.from({ length: bottomCount }).map((_, i) => {
-            const isInteractive = !interactiveOnTop && i === 0 && !!onHumanCheckerClick;
-            const className = `checker checker-a bar-checker ${playerStackSelected && !interactiveOnTop ? 'barCheckerSelected' : ''} ${playerStackMovable && !interactiveOnTop && i === 0 ? 'checker-movable' : ''} ${isInteractive ? 'barCheckerInteractive' : ''}`;
+        <div className={`barStackBottom ${playerStackSelected ? 'barForcedSelected' : ''}`} aria-hidden="true">
+          {Array.from({ length: aCount }).map((_, i) => {
+            const isInteractivePlayerChecker = i === 0 && !!onPlayerCheckerClick;
+            const playerCheckerClassName = `checker checker-a bar-checker ${playerStackSelected ? 'barCheckerSelected' : ''} ${playerStackMovable && i === 0 ? 'checker-movable' : ''} ${isInteractivePlayerChecker ? 'barCheckerInteractive' : ''}`;
 
-            if (!isInteractive) {
-              return <span key={`a-${i}`} className={className} style={{ zIndex: bottomCount - i }} />;
+            if (!isInteractivePlayerChecker) {
+              return <span key={`a-${i}`} className={playerCheckerClassName} style={{ zIndex: aCount - i }} />;
             }
 
             return (
               <button
                 key={`a-${i}`}
                 type="button"
-                className={`${className} bar-checker-button`}
-                style={{ zIndex: bottomCount - i }}
-                onClick={onHumanCheckerClick}
+                className={`${playerCheckerClassName} bar-checker-button`}
+                style={{ zIndex: aCount - i }}
+                onClick={onPlayerCheckerClick}
                 aria-label="Select checker on bar"
               />
             );
@@ -391,31 +342,9 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
   );
 }
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="modal-card"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h2>{title}</h2>
-          <button type="button" onClick={onClose} aria-label={`Close ${title}`}>Close</button>
-        </div>
-        <div className="modal-content">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const [game, setGame] = useState(loadInitial);
   const [selectedSource, setSelectedSource] = useState(null);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [diceAnimKey, setDiceAnimKey] = useState(0);
   const [isBoardDiceRolling, setIsBoardDiceRolling] = useState(false);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
@@ -428,21 +357,12 @@ export default function App() {
   const boardDiceRollTimerRef = useRef(null);
   const hasInitializedDiceAnimationRef = useRef(false);
   const openingSequenceIdRef = useRef(0);
-  const isComputerTurn = game.currentPlayer !== game.humanPlayer;
+  const isComputerTurn = game.currentPlayer === PLAYER_B;
   const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
-  const speedMultiplier = game.preferences.animationSpeed === 'fast' ? 0.55 : 1;
-  const boardDiceRollMs = game.preferences.animationsEnabled ? Math.round(BASE_BOARD_DICE_ROLL_MS * speedMultiplier) : 0;
-  const openingRollStepDelayMs = game.preferences.animationsEnabled ? Math.round(BASE_OPENING_ROLL_STEP_DELAY_MS * speedMultiplier) : 0;
-  const computerTurnDelayMs = game.preferences.animationsEnabled ? Math.round(BASE_COMPUTER_TURN_DELAY_MS * speedMultiplier) : 180;
-  const moveStepMs = game.preferences.animationsEnabled ? Math.round(BASE_MOVE_STEP_MS * speedMultiplier) : 0;
-  const moveStartDelayMs = game.preferences.animationsEnabled ? Math.round(BASE_MOVE_START_DELAY_MS * speedMultiplier) : 0;
-  const boardLayout = BOARD_LAYOUT_BY_HUMAN[game.humanPlayer] ?? BOARD_LAYOUT_BY_HUMAN.A;
-  const higherDieRequirement = useMemo(() => getHigherDieRequirement(game), [game]);
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
-  const playerPipCount = useMemo(() => calculatePipCount(game, game.humanPlayer), [game]);
-  const computerPlayer = game.humanPlayer === PLAYER_A ? PLAYER_B : PLAYER_A;
-  const computerPipCount = useMemo(() => calculatePipCount(game, computerPlayer), [game, computerPlayer]);
+  const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
+  const computerPipCount = useMemo(() => calculatePipCount(game, PLAYER_B), [game]);
 
   const movesBySource = useMemo(() => {
     const map = new Map();
@@ -460,11 +380,11 @@ export default function App() {
     !game.winner &&
     !isBoardDiceRolling &&
     !isAnimatingMove &&
-    game.currentPlayer === game.humanPlayer &&
+    game.currentPlayer === PLAYER_A &&
     game.dice.remaining.length > 0 &&
-    game.bar[game.humanPlayer] > 0;
+    game.bar.A > 0;
 
-  const activeSelectedSource = forcedBarSelection ? 'bar' : selectedSource;
+  const activeSelectedSource = selectedSource;
 
   const moveOptionsForSelected = useMemo(() => {
     if (activeSelectedSource == null) {
@@ -523,19 +443,10 @@ export default function App() {
     return set;
   }, [legalMoves]);
 
-  const showMovableSources =
-    game.preferences.showMoveHints &&
-    !isBoardDiceRolling &&
-    !isAnimatingMove &&
-    !isComputerTurn &&
-    !game.winner &&
-    game.dice.remaining.length > 0;
+  const showMovableSources = !isBoardDiceRolling && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
-    for (const legacyKey of LEGACY_STORAGE_KEYS) {
-      window.localStorage.removeItem(legacyKey);
-    }
   }, [game]);
 
   useEffect(() => {
@@ -561,19 +472,19 @@ export default function App() {
       boardDiceRollTimerRef.current = null;
     }
 
-    if (game.dice.values.length === 2 && boardDiceRollMs > 0) {
+    if (game.dice.values.length === 2) {
       setIsBoardDiceRolling(true);
       setDiceAnimKey((k) => k + 2);
       boardDiceRollTimerRef.current = window.setTimeout(() => {
         setIsBoardDiceRolling(false);
         boardDiceRollTimerRef.current = null;
-      }, boardDiceRollMs);
+      }, BOARD_DICE_ROLL_MS);
       return undefined;
     }
 
     setIsBoardDiceRolling(false);
     return undefined;
-  }, [boardDiceRollMs, diceSignature, game.dice.values.length]);
+  }, [diceSignature]);
 
   useEffect(() => {
     return () => {
@@ -594,7 +505,7 @@ export default function App() {
     const timer = window.setTimeout(() => {
       if (game.dice.remaining.length === 0) {
         setGame((prev) => {
-          if (prev.winner || prev.currentPlayer === prev.humanPlayer || prev.dice.remaining.length > 0) {
+          if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
             return prev;
           }
           startBoardDiceRollVisibilityWindow();
@@ -613,39 +524,10 @@ export default function App() {
         return;
       }
       void performMoveSequence(game, [aiMove]);
-    }, computerTurnDelayMs);
+    }, COMPUTER_TURN_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [computerTurnDelayMs, game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
-
-  useEffect(() => {
-    if (
-      game.winner ||
-      game.openingRollPending ||
-      isComputerTurn ||
-      isAnimatingMove ||
-      isBoardDiceRolling ||
-      isOpeningRollSequenceRunning ||
-      game.dice.remaining.length > 0 ||
-      !game.preferences.autoRollPlayer
-    ) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => {
-      handleRoll();
-    }, 260);
-    return () => window.clearTimeout(timer);
-  }, [
-    game.dice.remaining.length,
-    game.openingRollPending,
-    game.preferences.autoRollPlayer,
-    game.winner,
-    isAnimatingMove,
-    isBoardDiceRolling,
-    isComputerTurn,
-    isOpeningRollSequenceRunning
-  ]);
+  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
 
   function commit(next) {
     setGame(next);
@@ -656,10 +538,6 @@ export default function App() {
   }
 
   function startBoardDiceRollVisibilityWindow() {
-    if (boardDiceRollMs <= 0) {
-      setIsBoardDiceRolling(false);
-      return;
-    }
     if (boardDiceRollTimerRef.current) {
       window.clearTimeout(boardDiceRollTimerRef.current);
     }
@@ -667,33 +545,33 @@ export default function App() {
     boardDiceRollTimerRef.current = window.setTimeout(() => {
       setIsBoardDiceRolling(false);
       boardDiceRollTimerRef.current = null;
-    }, boardDiceRollMs);
+    }, BOARD_DICE_ROLL_MS);
   }
 
   async function runOpeningRollSequence(forced = null) {
     const sequenceId = openingSequenceIdRef.current + 1;
     openingSequenceIdRef.current = sequenceId;
 
-    const humanDie = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
+    const playerDie = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
     const computerDie = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
 
-    setOpeningRollDisplay({ playerDie: humanDie, computerDie: null, message: `You rolled ${humanDie}.` });
-    await wait(openingRollStepDelayMs);
+    setOpeningRollDisplay({ playerDie, computerDie: null, message: `You rolled ${playerDie}.` });
+    await wait(OPENING_ROLL_STEP_DELAY_MS);
     if (openingSequenceIdRef.current !== sequenceId) return;
 
-    setOpeningRollDisplay({ playerDie: humanDie, computerDie, message: `Computer rolled ${computerDie}.` });
-    await wait(openingRollStepDelayMs);
+    setOpeningRollDisplay({ playerDie, computerDie, message: `Computer rolled ${computerDie}.` });
+    await wait(OPENING_ROLL_STEP_DELAY_MS);
     if (openingSequenceIdRef.current !== sequenceId) return;
 
-    const tied = humanDie === computerDie;
+    const tied = playerDie === computerDie;
     const openerMessage = tied
-      ? `Tie at ${humanDie}-${computerDie}. Roll again.`
-      : humanDie > computerDie
+      ? `Tie at ${playerDie}-${computerDie}. Roll again.`
+      : playerDie > computerDie
         ? 'You go first.'
         : 'The computer goes first.';
 
-    setOpeningRollDisplay({ playerDie: humanDie, computerDie, message: openerMessage });
-    await wait(openingRollStepDelayMs);
+    setOpeningRollDisplay({ playerDie, computerDie, message: openerMessage });
+    await wait(OPENING_ROLL_STEP_DELAY_MS);
     if (openingSequenceIdRef.current !== sequenceId) return;
 
     setOpeningRollDisplay(null);
@@ -701,8 +579,7 @@ export default function App() {
       if (prev.winner || !prev.openingRollPending || prev.dice.remaining.length > 0) {
         return prev;
       }
-      const forcedBySide = prev.humanPlayer === PLAYER_A ? [humanDie, computerDie] : [computerDie, humanDie];
-      return pushUndoState(prev, rollDice(prev, forcedBySide));
+      return pushUndoState(prev, rollDice(prev, [playerDie, computerDie]));
     });
     setSelectedSource(null);
   }
@@ -812,10 +689,10 @@ export default function App() {
     }
 
     setMovingChecker({ player, x: centers[0].x, y: centers[0].y });
-    await wait(moveStartDelayMs);
+    await wait(MOVE_START_DELAY_MS);
     for (let i = 1; i < centers.length; i += 1) {
       setMovingChecker((prev) => (prev ? { ...prev, x: centers[i].x, y: centers[i].y } : prev));
-      await wait(moveStepMs);
+      await wait(MOVE_STEP_MS);
     }
     await wait(30);
   }
@@ -856,10 +733,9 @@ export default function App() {
     }
     setSelectedSource(null);
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const shouldAnimate = game.preferences.animationsEnabled && !prefersReducedMotion;
     setIsAnimatingMove(true);
     try {
-      if (shouldAnimate) {
+      if (!prefersReducedMotion) {
         let animationState = stateAtMove;
         for (const move of moves) {
           await animateSingleMove(animationState, move);
@@ -905,11 +781,7 @@ export default function App() {
     }
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
-    const reset = {
-      ...createInitialState(),
-      humanPlayer: game.humanPlayer,
-      preferences: { ...game.preferences }
-    };
+    const reset = createInitialState();
     commit(withUndo(reset));
     setSelectedSource(null);
   }
@@ -922,8 +794,6 @@ export default function App() {
     setOpeningRollDisplay(null);
     const reset = {
       ...createInitialState(),
-      humanPlayer: game.humanPlayer,
-      preferences: { ...game.preferences },
       undoStack: game.undoStack,
       dev: game.dev
     };
@@ -949,38 +819,8 @@ export default function App() {
     openingSequenceIdRef.current += 1;
     setOpeningRollDisplay(null);
     window.localStorage.removeItem(STORAGE_KEY);
-    for (const legacyKey of LEGACY_STORAGE_KEYS) {
-      window.localStorage.removeItem(legacyKey);
-    }
     commit(createInitialState());
     setSelectedSource(null);
-  }
-
-  function applyRematch({ swapSides }) {
-    if (isAnimatingMove) {
-      return;
-    }
-    openingSequenceIdRef.current += 1;
-    setOpeningRollDisplay(null);
-    const nextHumanPlayer = swapSides ? (game.humanPlayer === PLAYER_A ? PLAYER_B : PLAYER_A) : game.humanPlayer;
-    const reset = {
-      ...createInitialState(),
-      humanPlayer: nextHumanPlayer,
-      preferences: { ...game.preferences },
-      dev: game.dev
-    };
-    commit(withUndo(reset));
-    setSelectedSource(null);
-  }
-
-  function updatePreferences(nextPreferences) {
-    setGame((prev) => ({
-      ...prev,
-      preferences: {
-        ...prev.preferences,
-        ...nextPreferences
-      }
-    }));
   }
 
   function updateDebugDie(key, value) {
@@ -998,37 +838,7 @@ export default function App() {
     }));
   }
 
-  useEffect(() => {
-    function onKeyDown(event) {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
-      const active = document.activeElement;
-      if (active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
-        return;
-      }
-      const key = event.key.toLowerCase();
-      if (key === 'r') {
-        event.preventDefault();
-        handleRoll();
-      } else if (key === 'u') {
-        event.preventDefault();
-        handleUndo();
-      } else if (key === 'h') {
-        event.preventDefault();
-        setShowHelp((prev) => !prev);
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  });
-
-  const statusText =
-    openingRollDisplay?.message ??
-    (isAnimatingMove
-      ? `${playerLabel(game.currentPlayer, game.humanPlayer)} moving...`
-      : describeRequiredAction(game, legalMoves, higherDieRequirement));
+  const statusText = openingRollDisplay?.message ?? (isAnimatingMove ? `${playerLabel(game.currentPlayer)} moving...` : describeRequiredAction(game, legalMoves));
 
   function renderPoint(point, isTop) {
     return (
@@ -1045,7 +855,7 @@ export default function App() {
           }
         }}
         selected={activeSelectedSource === point}
-        highlighted={game.preferences.showMoveHints && destinationSet.has(String(point))}
+        highlighted={destinationSet.has(String(point))}
         movable={showMovableSources && movableSourceSet.has(String(point))}
         onClick={() => {
           if (isAnimatingMove || isComputerTurn) {
@@ -1082,10 +892,7 @@ export default function App() {
         <button type="button" onClick={handleUndo} aria-label="Undo" disabled={isAnimatingMove || game.undoStack.length === 0}>Undo</button>
         <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove}>Reset to Starting Position</button>
         <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove}>Clear Saved Game</button>
-        <button type="button" onClick={() => setShowSettings(true)} aria-label="Open settings" disabled={isAnimatingMove}>Settings</button>
-        <button type="button" onClick={() => setShowHelp(true)} aria-label="Open help">Help</button>
       </section>
-      <p className="shortcut-hint">Shortcuts: <strong>R</strong> Roll, <strong>U</strong> Undo, <strong>H</strong> Help.</p>
 
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
         <div className="board-shell">
@@ -1100,19 +907,18 @@ export default function App() {
                 <span className="pip-box-value">PIP: {playerPipCount}</span>
               </div>
             </div>
-            <div className="point-band top-band top-left-band">{boardLayout.topLeft.map((point) => renderPoint(point, true))}</div>
-            <div className="point-band top-band top-right-band">{boardLayout.topRight.map((point) => renderPoint(point, true))}</div>
+            <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
+            <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
 
             <Bar
               barRef={barRef}
               state={game}
-              humanPlayer={game.humanPlayer}
               playerStackSelected={activeSelectedSource === 'bar'}
               playerStackMovable={showMovableSources && movableSourceSet.has('bar')}
-              highlighted={game.preferences.showMoveHints && destinationSet.has('bar')}
+              highlighted={destinationSet.has('bar')}
               movable={showMovableSources && movableSourceSet.has('bar')}
               onClick={() => {}}
-              onHumanCheckerClick={() => {
+              onPlayerCheckerClick={() => {
                 if (isAnimatingMove || isComputerTurn) {
                   return;
                 }
@@ -1120,20 +926,20 @@ export default function App() {
               }}
             />
 
-            <div className="point-band bottom-band bottom-left-band">{boardLayout.bottomLeft.map((point) => renderPoint(point, false))}</div>
-            <div className="point-band bottom-band bottom-right-band">{boardLayout.bottomRight.map((point) => renderPoint(point, false))}</div>
+            <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
+            <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
             <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
           </div>
 
           <aside className="home-rail" aria-label="Bear off area">
             <BearOffTray
-              label={game.humanPlayer === PLAYER_B ? 'Player' : 'Computer'}
+              label="Computer"
               className="home-top"
               trayRef={(node) => {
                 bearOffRefs.current.B = node;
               }}
               count={game.bearOff.B}
-              highlighted={game.preferences.showMoveHints && destinationSet.has('off') && game.currentPlayer === PLAYER_B}
+              highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B}
               onClick={() => {
                 if (!isAnimatingMove && !isComputerTurn) {
                   moveToDestination('off');
@@ -1141,13 +947,13 @@ export default function App() {
               }}
             />
             <BearOffTray
-              label={game.humanPlayer === PLAYER_A ? 'Player' : 'Computer'}
+              label="Player"
               className="home-bottom"
               trayRef={(node) => {
                 bearOffRefs.current.A = node;
               }}
               count={game.bearOff.A}
-              highlighted={game.preferences.showMoveHints && destinationSet.has('off') && game.currentPlayer === PLAYER_A}
+              highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A}
               onClick={() => {
                 if (!isAnimatingMove && !isComputerTurn) {
                   moveToDestination('off');
@@ -1163,88 +969,11 @@ export default function App() {
             style={{
               left: `${movingChecker.x}px`,
               top: `${movingChecker.y}px`,
-              '--move-step-ms': `${Math.max(1, moveStepMs)}ms`
+              '--move-step-ms': `${MOVE_STEP_MS}ms`
             }}
           />
         )}
       </section>
-
-      {game.winner && (
-        <section className="winner-banner" aria-label="Game result">
-          <strong>{playerLabel(game.winner, game.humanPlayer)} wins.</strong>
-          <div className="winner-actions">
-            <button type="button" onClick={() => applyRematch({ swapSides: false })} disabled={isAnimatingMove}>Rematch</button>
-            <button type="button" onClick={() => applyRematch({ swapSides: true })} disabled={isAnimatingMove}>Swap Sides + Rematch</button>
-            <button type="button" onClick={handleResetPosition} disabled={isAnimatingMove}>Reset Board</button>
-          </div>
-        </section>
-      )}
-
-      {showHelp && (
-        <Modal title="How to Play" onClose={() => setShowHelp(false)}>
-          <div className="modal-copy">
-            <h3>Goal</h3>
-            <p>Bear off all 15 of your checkers before the computer does.</p>
-            <h3>Turn Flow</h3>
-            <p>Roll dice, select a legal source checker, then choose a highlighted destination.</p>
-            <h3>Bar Entry</h3>
-            <p>If you have checkers on the bar, you must enter them first before other moves.</p>
-            <h3>Bearing Off</h3>
-            <p>You can bear off only when all of your checkers are in your home board and none are on the bar.</p>
-            <h3>Controls</h3>
-            <p>Use Roll Dice, Undo, and Reset controls, or keyboard shortcuts R, U, and H.</p>
-            <p><a href="/docs/RULES.md" target="_blank" rel="noreferrer">View full rules reference</a></p>
-          </div>
-        </Modal>
-      )}
-
-      {showSettings && (
-        <Modal title="Settings" onClose={() => setShowSettings(false)}>
-          <div className="settings-list">
-            <label>
-              <span>Animations</span>
-              <select
-                value={game.preferences.animationsEnabled ? 'on' : 'off'}
-                onChange={(event) => updatePreferences({ animationsEnabled: event.target.value === 'on' })}
-              >
-                <option value="on">On</option>
-                <option value="off">Off</option>
-              </select>
-            </label>
-            <label>
-              <span>Animation speed</span>
-              <select
-                value={game.preferences.animationSpeed}
-                onChange={(event) => updatePreferences({ animationSpeed: event.target.value === 'fast' ? 'fast' : 'normal' })}
-                disabled={!game.preferences.animationsEnabled}
-              >
-                <option value="normal">Normal</option>
-                <option value="fast">Fast</option>
-              </select>
-            </label>
-            <label>
-              <span>Auto-roll for player</span>
-              <select
-                value={game.preferences.autoRollPlayer ? 'on' : 'off'}
-                onChange={(event) => updatePreferences({ autoRollPlayer: event.target.value === 'on' })}
-              >
-                <option value="off">Off</option>
-                <option value="on">On</option>
-              </select>
-            </label>
-            <label>
-              <span>Show move hints</span>
-              <select
-                value={game.preferences.showMoveHints ? 'on' : 'off'}
-                onChange={(event) => updatePreferences({ showMoveHints: event.target.value === 'on' })}
-              >
-                <option value="on">On</option>
-                <option value="off">Off</option>
-              </select>
-            </label>
-          </div>
-        </Modal>
-      )}
 
       <section className="debug" aria-label="Debug panel">
         <button type="button" onClick={toggleDebug} aria-label="Toggle debug panel" className="debug-toggle">

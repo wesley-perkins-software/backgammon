@@ -79,12 +79,6 @@ body {
   gap: 0.55rem;
 }
 
-.shortcut-hint {
-  margin: 0.45rem 0 0;
-  color: rgba(26, 29, 34, 0.78);
-  font-size: 0.9rem;
-}
-
 button {
   cursor: pointer;
   border: 2px solid #5b412d;
@@ -686,91 +680,6 @@ button:focus-visible {
   margin-top: 1rem;
 }
 
-.winner-banner {
-  margin-top: 0.75rem;
-  border: 2px solid #6f4d30;
-  border-radius: 0.7rem;
-  background: linear-gradient(180deg, #fff8ea, #f0ddb6);
-  padding: 0.7rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.winner-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(18, 16, 12, 0.58);
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  z-index: 60;
-}
-
-.modal-card {
-  width: min(640px, 100%);
-  max-height: calc(100vh - 2rem);
-  overflow: auto;
-  border-radius: 0.8rem;
-  border: 2px solid #5b412d;
-  background: linear-gradient(180deg, #fffaf0, #f4e6c8);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.75rem;
-  border-bottom: 1px solid rgba(48, 31, 20, 0.25);
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.modal-content {
-  padding: 0.8rem;
-}
-
-.modal-copy h3 {
-  margin: 0.65rem 0 0.2rem;
-}
-
-.modal-copy p {
-  margin: 0.2rem 0;
-}
-
-.settings-list {
-  display: grid;
-  gap: 0.6rem;
-}
-
-.settings-list label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.7rem;
-}
-
-.settings-list select {
-  min-width: 112px;
-  padding: 0.35rem 0.45rem;
-  border-radius: 0.35rem;
-  border: 1px solid #5c3f2a;
-  background: #fff;
-}
-
 .debug-toggle {
   background: #d9e8ef;
 }
@@ -897,10 +806,6 @@ button:focus-visible {
     min-height: 42px;
   }
 
-  .winner-banner {
-    align-items: flex-start;
-  }
-
   .board-surface {
     --bar-column-width: clamp(14px, 3.8vw, 20px);
     grid-template-rows: minmax(128px, 1fr) clamp(44px, 10vw, 58px) minmax(128px, 1fr);
@@ -1013,15 +918,6 @@ button:focus-visible {
     width: 100%;
     padding: 0.5rem;
     font-size: 0.9rem;
-  }
-
-  .settings-list label {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .settings-list select {
-    width: 100%;
   }
 
   .dice-panel {

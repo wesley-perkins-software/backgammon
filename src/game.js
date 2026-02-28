@@ -1,6 +1,5 @@
-export const STORAGE_KEY = 'backgammon.save.v2';
-export const LEGACY_STORAGE_KEYS = ['backgammon.save.v1'];
-export const SCHEMA_VERSION = 2;
+export const STORAGE_KEY = 'backgammon.save.v1';
+export const SCHEMA_VERSION = 1;
 
 export const PLAYER_A = 'A';
 export const PLAYER_B = 'B';
@@ -18,14 +17,6 @@ const STARTING_POINTS = [
 ];
 
 const MAX_UNDO = 300;
-const LEGACY_SCHEMA_VERSION = 1;
-
-const DEFAULT_PREFERENCES = Object.freeze({
-  animationsEnabled: true,
-  animationSpeed: 'normal',
-  autoRollPlayer: false,
-  showMoveHints: true
-});
 
 function cloneState(state) {
   return JSON.parse(JSON.stringify(state));
@@ -84,19 +75,13 @@ export function createInitialState() {
     bar: { A: 0, B: 0 },
     bearOff: { A: 0, B: 0 },
     currentPlayer: PLAYER_A,
-    humanPlayer: PLAYER_A,
     dice: { values: [], remaining: [] },
     winner: null,
     openingRollPending: true,
     undoStack: [],
     statusText: 'Roll to determine who goes first.',
-    preferences: { ...DEFAULT_PREFERENCES },
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
-}
-
-export function getDefaultPreferences() {
-  return { ...DEFAULT_PREFERENCES };
 }
 
 export function isBlocked(points, pointIndex, player) {
@@ -326,45 +311,6 @@ export function computeLegalMoves(state) {
   return firstMoves;
 }
 
-export function getHigherDieRequirement(state) {
-  const remaining = state?.dice?.remaining;
-  if (!Array.isArray(remaining) || remaining.length !== 2) {
-    return null;
-  }
-
-  const [d1, d2] = remaining;
-  if (d1 === d2) {
-    return null;
-  }
-
-  const d1Playable = generateSingleDieMoves(state, d1).length > 0;
-  const d2Playable = generateSingleDieMoves(state, d2).length > 0;
-  if (!d1Playable || !d2Playable) {
-    return null;
-  }
-
-  const legalMoves = computeLegalMoves(state);
-  if (!legalMoves.length) {
-    return null;
-  }
-
-  const usedDice = new Set(legalMoves.map((move) => move.dieUsed));
-  if (usedDice.size !== 1) {
-    return null;
-  }
-
-  const requiredDie = [...usedDice][0];
-  const higherDie = Math.max(d1, d2);
-  if (requiredDie !== higherDie) {
-    return null;
-  }
-
-  return {
-    requiredDie,
-    blockedDie: Math.min(d1, d2)
-  };
-}
-
 function maxPlayableMoves(state) {
   if (state.dice.remaining.length === 0 || state.winner) {
     return 0;
@@ -493,7 +439,7 @@ export function applyMove(state, move) {
   let next = applyMoveInternal(state, move);
 
   if (next.winner) {
-    return withStatus(next, `${playerLabel(next.currentPlayer, next.humanPlayer)} wins.`);
+    return withStatus(next, `${playerLabel(next.currentPlayer)} wins.`);
   }
 
   const remainingLegal = computeLegalMoves(next);
@@ -530,7 +476,7 @@ export function rollDice(state, forcedValues = null) {
         values: [openerA, openerB],
         remaining: [openerA, openerB]
       },
-      statusText: `${playerLabel(startingPlayer, state.humanPlayer)} starts with ${openerA} and ${openerB}.`
+      statusText: `${playerLabel(startingPlayer)} starts with ${openerA} and ${openerB}.`
     };
   }
 
@@ -544,27 +490,23 @@ export function rollDice(state, forcedValues = null) {
       values: [d1, d2],
       remaining
     },
-    statusText: `${playerLabel(state.currentPlayer, state.humanPlayer)} rolled ${d1} and ${d2}.`
+    statusText: `${playerLabel(state.currentPlayer)} rolled ${d1} and ${d2}.`
   };
 
   if (computeLegalMoves(next).length === 0) {
-    next = endTurn(
-      withStatus(next, `${playerLabel(state.currentPlayer, state.humanPlayer)} has no legal moves with rolled dice.`),
-      'Turn auto-passed.'
-    );
+    next = endTurn(withStatus(next, `${playerLabel(state.currentPlayer)} has no legal moves. Turn passed.`));
   }
 
   return next;
 }
 
-export function endTurn(state, reasonText = '') {
+export function endTurn(state) {
   const nextPlayer = opponent(state.currentPlayer);
-  const reasonPrefix = reasonText ? `${reasonText} ` : '';
   return {
     ...cloneState(state),
     currentPlayer: nextPlayer,
     dice: { values: [], remaining: [] },
-    statusText: `${reasonPrefix}${playerLabel(nextPlayer, state.humanPlayer)} to move. Roll dice.`
+    statusText: `${playerLabel(nextPlayer)} to move. Roll dice.`
   };
 }
 
@@ -578,8 +520,8 @@ export function checkWin(state) {
   return null;
 }
 
-export function playerLabel(player, humanPlayer = PLAYER_A) {
-  return player === humanPlayer ? 'Player' : 'Computer';
+export function playerLabel(player) {
+  return player === PLAYER_A ? 'Player' : 'Computer';
 }
 
 export function calculatePipCount(state, player) {
@@ -599,21 +541,6 @@ export function calculatePipCount(state, player) {
 
 function isPlainObject(v) {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
-
-function sanitizePreferences(preferences) {
-  if (!isPlainObject(preferences)) {
-    return getDefaultPreferences();
-  }
-  const speed = preferences.animationSpeed === 'fast' ? 'fast' : 'normal';
-  const defaults = getDefaultPreferences();
-  return {
-    animationsEnabled:
-      typeof preferences.animationsEnabled === 'boolean' ? preferences.animationsEnabled : defaults.animationsEnabled,
-    animationSpeed: speed,
-    autoRollPlayer: typeof preferences.autoRollPlayer === 'boolean' ? preferences.autoRollPlayer : defaults.autoRollPlayer,
-    showMoveHints: preferences.showMoveHints !== false
-  };
 }
 
 function validPointArray(points) {
@@ -657,7 +584,7 @@ export function restoreState(raw) {
     if (!isPlainObject(parsed)) {
       return null;
     }
-    if (![LEGACY_SCHEMA_VERSION, SCHEMA_VERSION].includes(parsed.version)) {
+    if (parsed.version !== SCHEMA_VERSION) {
       return null;
     }
     if (!validPointArray(parsed.points)) {
@@ -680,17 +607,11 @@ export function restoreState(raw) {
     }
 
     const base = createInitialState();
-    const restoredPreferences =
-      parsed.version === LEGACY_SCHEMA_VERSION ? getDefaultPreferences() : sanitizePreferences(parsed.preferences);
-
     return {
       ...base,
       ...parsed,
-      version: SCHEMA_VERSION,
       openingRollPending: typeof parsed.openingRollPending === 'boolean' ? parsed.openingRollPending : base.openingRollPending,
       statusText: typeof parsed.statusText === 'string' ? parsed.statusText : base.statusText,
-      humanPlayer: [PLAYER_A, PLAYER_B].includes(parsed.humanPlayer) ? parsed.humanPlayer : base.humanPlayer,
-      preferences: restoredPreferences,
       dev: isPlainObject(parsed.dev)
         ? {
             debugOpen: Boolean(parsed.dev.debugOpen),
