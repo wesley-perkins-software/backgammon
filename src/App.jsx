@@ -140,27 +140,59 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   );
 }
 
-function DicePanel({ game, isBoardDiceRolling, openingRollDisplay }) {
-  if (game.openingRollPending) {
-    return (
-      <div className="dice-panel" aria-label="Dice">
-        {openingRollDisplay?.playerDie ? <DieFace value={openingRollDisplay.playerDie} /> : null}
-        {openingRollDisplay?.computerDie ? <DieFace value={openingRollDisplay.computerDie} /> : null}
-      </div>
-    );
-  }
+function StatusChip({ text }) {
+  return (
+    <div className="status-chip" role="status" aria-live="polite">
+      {text}
+    </div>
+  );
+}
 
-  if (isBoardDiceRolling || game.dice.values.length !== 2) {
-    return <div className="dice-panel" aria-label="Dice" />;
+function MenuSheet({ open, onClose, children }) {
+  if (!open) {
+    return null;
   }
-
-  const rolledDiceWithUsage = getRolledDiceWithUsage(game);
 
   return (
-    <div className="dice-panel" aria-label="Dice">
-      {rolledDiceWithUsage.map((die, i) => (
-        <DieFace key={`status-die-${i}`} value={die.value} used={die.used} />
-      ))}
+    <div className="menu-sheet-backdrop" onClick={onClose} role="presentation">
+      <section className="menu-sheet" onClick={(event) => event.stopPropagation()} aria-label="Game menu">
+        <div className="menu-sheet-handle" aria-hidden="true" />
+        <header className="menu-sheet-header">
+          <h2>Game Menu</h2>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">✕</button>
+        </header>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function BoardHUD({ game, diceAnimKey, isBoardDiceRolling, openingRollDisplay, canRoll, onRoll }) {
+  const rolledDiceWithUsage = getRolledDiceWithUsage(game, {
+    expandDoubles: !isBoardDiceRolling
+  });
+
+  if (!game.openingRollPending && !rolledDiceWithUsage.length && !canRoll) {
+    return null;
+  }
+
+  return (
+    <div className="board-hud-overlay" aria-live="polite">
+      {canRoll && (
+        <button type="button" className="roll-cta" onClick={onRoll} aria-label="Roll dice">
+          Roll
+        </button>
+      )}
+      {game.openingRollPending && (
+        <div className="dice-state-card" aria-label="Opening roll dice">
+          <span className="dice-state-title">Opening roll</span>
+          <div className="dice-panel">
+            {openingRollDisplay?.playerDie ? <DieFace value={openingRollDisplay.playerDie} /> : null}
+            {openingRollDisplay?.computerDie ? <DieFace value={openingRollDisplay.computerDie} /> : null}
+          </div>
+        </div>
+      )}
+      <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
     </div>
   );
 }
@@ -175,10 +207,13 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
 
   if (!isBoardDiceRolling) {
     return (
-      <div className="board-dice-overlay" aria-hidden="true">
-        {rolledDiceWithUsage.map((die, idx) => (
-          <DieFace key={`board-static-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />
-        ))}
+      <div className="dice-state-card" aria-label="Current dice and remaining moves">
+        <span className="dice-state-title">Moves left: {game.dice.remaining.length}</span>
+        <div className="board-dice-overlay" aria-hidden="true">
+          {rolledDiceWithUsage.map((die, idx) => (
+            <DieFace key={`board-static-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />
+          ))}
+        </div>
       </div>
     );
   }
@@ -215,31 +250,34 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
   }
 
   return (
-    <div className="board-dice-overlay" aria-hidden="true">
-      {rolledDiceWithUsage.map((die, idx) => {
-        const dieValue = die.value;
-        const finalValue = Math.min(6, Math.max(1, Number(dieValue) || 1));
-        const finalOrientation = orientationByValue[finalValue];
-        return (
-          <div key={`board-die-wrap-${idx}`} className={`board-die-perspective ${die.used ? 'board-die-used' : ''}`.trim()}>
-            <div
-              key={`board-die-${idx}-${finalValue}-${diceAnimKey + 2000 + idx}`}
-              className="board-die-cube"
-              style={{
-                '--end-rot-x': finalOrientation.x,
-                '--end-rot-y': finalOrientation.y
-              }}
-            >
-              {renderFace(1, 'board-die-front')}
-              {renderFace(6, 'board-die-back')}
-              {renderFace(3, 'board-die-right')}
-              {renderFace(4, 'board-die-left')}
-              {renderFace(5, 'board-die-top')}
-              {renderFace(2, 'board-die-bottom')}
+    <div className="dice-state-card" aria-label="Current dice and remaining moves">
+      <span className="dice-state-title">Moves left: {game.dice.remaining.length}</span>
+      <div className="board-dice-overlay" aria-hidden="true">
+        {rolledDiceWithUsage.map((die, idx) => {
+          const dieValue = die.value;
+          const finalValue = Math.min(6, Math.max(1, Number(dieValue) || 1));
+          const finalOrientation = orientationByValue[finalValue];
+          return (
+            <div key={`board-die-wrap-${idx}`} className={`board-die-perspective ${die.used ? 'board-die-used' : ''}`.trim()}>
+              <div
+                key={`board-die-${idx}-${finalValue}-${diceAnimKey + 2000 + idx}`}
+                className="board-die-cube"
+                style={{
+                  '--end-rot-x': finalOrientation.x,
+                  '--end-rot-y': finalOrientation.y
+                }}
+              >
+                {renderFace(1, 'board-die-front')}
+                {renderFace(6, 'board-die-back')}
+                {renderFace(3, 'board-die-right')}
+                {renderFace(4, 'board-die-left')}
+                {renderFace(5, 'board-die-top')}
+                {renderFace(2, 'board-die-bottom')}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -327,7 +365,7 @@ function Bar({ state, playerStackSelected, playerStackMovable, highlighted, mova
   );
 }
 
-function BearOffTray({ label, count, highlighted, onClick, trayRef, className = '' }) {
+function BearOffTray({ label, count, pipCount, highlighted, onClick, trayRef, className = '' }) {
   return (
     <button
       ref={trayRef}
@@ -338,6 +376,7 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
     >
       <span className="tray-label">{label} Off</span>
       <span className="tray-count">{count}</span>
+      <span className="tray-meta">Pip {pipCount}</span>
     </button>
   );
 }
@@ -350,6 +389,7 @@ export default function App() {
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
   const [openingRollDisplay, setOpeningRollDisplay] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
@@ -839,6 +879,7 @@ export default function App() {
   }
 
   const statusText = openingRollDisplay?.message ?? (isAnimatingMove ? `${playerLabel(game.currentPlayer)} moving...` : describeRequiredAction(game, legalMoves));
+  const canRoll = !game.winner && !isComputerTurn && !isAnimatingMove && !isOpeningRollSequenceRunning && game.dice.remaining.length === 0;
 
   function renderPoint(point, isTop) {
     return (
@@ -875,38 +916,25 @@ export default function App() {
     <main className="app">
       <header className="header">
         <h1>Backgammon Local</h1>
-        <p className="subtitle">Play as Player against the computer, fully saved in your browser.</p>
       </header>
 
-      <section className="status" aria-live="polite">
-        <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
-        <div><strong>Action:</strong> {statusText}</div>
-        <DicePanel game={game} isBoardDiceRolling={isBoardDiceRolling} openingRollDisplay={openingRollDisplay} />
-      </section>
-
-      <section className="controls" aria-label="Game controls">
-        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}>
-          Roll Dice
-        </button>
-        <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove}>New Game</button>
-        <button type="button" onClick={handleUndo} aria-label="Undo" disabled={isAnimatingMove || game.undoStack.length === 0}>Undo</button>
-        <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove}>Reset to Starting Position</button>
-        <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove}>Clear Saved Game</button>
-      </section>
-
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
+        <StatusChip text={statusText} />
+        <button
+          type="button"
+          className="icon-btn board-action-btn"
+          onClick={handleUndo}
+          aria-label="Undo"
+          disabled={isAnimatingMove || game.undoStack.length === 0}
+        >
+          ↶
+        </button>
+        <button type="button" className="icon-btn board-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Open game menu">
+          ⚙
+        </button>
+
         <div className="board-shell">
           <div className="board-surface">
-            <div className="pip-board-row" aria-label="Pip counts">
-              <div className="pip-box pip-box-computer">
-                <span className="pip-box-label">Computer</span>
-                <span className="pip-box-value">PIP: {computerPipCount}</span>
-              </div>
-              <div className="pip-box pip-box-player">
-                <span className="pip-box-label">Player</span>
-                <span className="pip-box-value">PIP: {playerPipCount}</span>
-              </div>
-            </div>
             <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
             <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
 
@@ -928,7 +956,14 @@ export default function App() {
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-            <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
+            <BoardHUD
+              game={game}
+              diceAnimKey={diceAnimKey}
+              isBoardDiceRolling={isBoardDiceRolling}
+              openingRollDisplay={openingRollDisplay}
+              canRoll={canRoll}
+              onRoll={() => handleRoll()}
+            />
           </div>
 
           <aside className="home-rail" aria-label="Bear off area">
@@ -939,6 +974,7 @@ export default function App() {
                 bearOffRefs.current.B = node;
               }}
               count={game.bearOff.B}
+              pipCount={computerPipCount}
               highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B}
               onClick={() => {
                 if (!isAnimatingMove && !isComputerTurn) {
@@ -953,6 +989,7 @@ export default function App() {
                 bearOffRefs.current.A = node;
               }}
               count={game.bearOff.A}
+              pipCount={playerPipCount}
               highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A}
               onClick={() => {
                 if (!isAnimatingMove && !isComputerTurn) {
@@ -975,10 +1012,15 @@ export default function App() {
         )}
       </section>
 
-      <section className="debug" aria-label="Debug panel">
-        <button type="button" onClick={toggleDebug} aria-label="Toggle debug panel" className="debug-toggle">
-          {game.dev.debugOpen ? 'Hide Dev Tools' : 'Show Dev Tools'}
-        </button>
+      <MenuSheet open={menuOpen} onClose={() => setMenuOpen(false)}>
+        <div className="menu-actions">
+          <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove}>New Game</button>
+          <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove}>Reset to Starting Position</button>
+          <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove}>Clear Saved Game</button>
+          <button type="button" onClick={toggleDebug} aria-label="Toggle debug panel" className="menu-dev-toggle">
+            {game.dev.debugOpen ? 'Hide Dev Tools' : 'Show Dev Tools'}
+          </button>
+        </div>
 
         {game.dev.debugOpen && (
           <div className="debug-panel">
@@ -1013,7 +1055,7 @@ export default function App() {
             </button>
           </div>
         )}
-      </section>
+      </MenuSheet>
     </main>
   );
 }
