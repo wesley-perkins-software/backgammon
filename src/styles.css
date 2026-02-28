@@ -165,17 +165,29 @@ button:focus-visible {
 
 .board-stage {
   position: relative;
-  margin-top: 2.6rem;
+  margin-top: 1rem;
 }
 
-.board-shell {
+.game-layout {
   display: grid;
   grid-template-columns: 1fr minmax(95px, 118px);
+  grid-template-rows: auto 1fr;
   gap: 0.75rem;
-  align-items: stretch;
+  align-items: start;
+}
+
+.pip-row {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
 }
 
 .home-rail {
+  grid-column: 2;
+  grid-row: 2;
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 0.75rem;
@@ -209,6 +221,8 @@ button:focus-visible {
 }
 
 .board-surface {
+  grid-column: 1;
+  grid-row: 2;
   position: relative;
   display: grid;
   grid-template-columns: 1fr var(--bar-column-width) 1fr;
@@ -224,20 +238,8 @@ button:focus-visible {
   box-shadow: 0 10px 18px rgba(45, 25, 10, 0.25);
 }
 
-.pip-board-row {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -34px;
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  pointer-events: none;
-  z-index: 12;
-}
-
 .pip-box {
-  min-width: 210px;
+  min-width: clamp(156px, 22vw, 210px);
   border-radius: 0.72rem;
   border: 2px solid #2f1e13;
   background: linear-gradient(180deg, #fff8e8, #ead0a5);
@@ -271,9 +273,15 @@ button:focus-visible {
 }
 
 .pip-box-value {
-  font-size: 1.78rem;
+  font-size: clamp(1.15rem, 2.2vw, 1.65rem);
   font-weight: 700;
   line-height: 1.05;
+}
+
+.pip-box-meta {
+  margin-top: 0.15rem;
+  font-size: 0.76rem;
+  opacity: 0.85;
 }
 
 .board-dice-overlay {
@@ -750,11 +758,18 @@ button:focus-visible {
 }
 
 @media (max-width: 1080px) {
-  .board-shell {
+  .game-layout {
     grid-template-columns: 1fr;
   }
 
+  .pip-row,
+  .board-surface,
   .home-rail {
+    grid-column: 1;
+  }
+
+  .home-rail {
+    grid-row: 3;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: 1fr;
   }
@@ -766,21 +781,15 @@ button:focus-visible {
 }
 
 @media (max-width: 760px) {
-  .board-stage {
-    margin-top: 2.2rem;
-  }
-
-  .pip-board-row {
-    top: -30px;
+  .pip-row {
+    flex-wrap: wrap;
+    align-items: stretch;
   }
 
   .pip-box {
-    min-width: 172px;
+    flex: 1 1 220px;
+    min-width: 0;
     padding: 0.5rem 0.72rem;
-  }
-
-  .pip-box-value {
-    font-size: 1.35rem;
   }
 
   .app {
@@ -864,16 +873,8 @@ button:focus-visible {
 }
 
 @media (max-width: 560px) {
-  .board-stage {
-    margin-top: 1.75rem;
-  }
-
-  .pip-board-row {
-    top: -24px;
-  }
-
   .pip-box {
-    min-width: 138px;
+    flex-basis: 100%;
     border-width: 1.5px;
     border-radius: 0.58rem;
     padding: 0.4rem 0.56rem;
@@ -881,10 +882,6 @@ button:focus-visible {
 
   .pip-box-label {
     font-size: 0.74rem;
-  }
-
-  .pip-box-value {
-    font-size: 1.04rem;
   }
 
   :root {
