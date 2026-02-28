@@ -88,31 +88,6 @@ function getRolledDiceWithUsage(game, { expandDoubles = true } = {}) {
   });
 }
 
-function describeRequiredAction(state, legalMoves) {
-  const computerTurn = state.currentPlayer === PLAYER_B;
-  const turnName = computerTurn ? 'Computer' : playerLabel(state.currentPlayer);
-
-  if (state.winner) {
-    return `${playerLabel(state.winner)} wins.`;
-  }
-  if (state.openingRollPending) {
-    return state.statusText;
-  }
-  if (state.dice.remaining.length === 0) {
-    return computerTurn ? 'Computer is rolling...' : `${turnName}: roll dice.`;
-  }
-  if (state.bar[state.currentPlayer] > 0) {
-    return `${turnName} must enter from the bar.`;
-  }
-  if (legalMoves.length === 0) {
-    return `${turnName} has no legal moves.`;
-  }
-  if (computerTurn) {
-    return 'Computer is choosing a move...';
-  }
-  return state.statusText;
-}
-
 function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   const safeValue = Math.min(6, Math.max(1, Number(value) || 1));
   const pipsByValue = {
@@ -136,31 +111,6 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
           <span key={cell} className={`pip ${pipsByValue[safeValue].includes(cell) ? 'on' : ''}`} />
         ))}
       </div>
-    </div>
-  );
-}
-
-function DicePanel({ game, isBoardDiceRolling, openingRollDisplay }) {
-  if (game.openingRollPending) {
-    return (
-      <div className="dice-panel" aria-label="Dice">
-        {openingRollDisplay?.playerDie ? <DieFace value={openingRollDisplay.playerDie} /> : null}
-        {openingRollDisplay?.computerDie ? <DieFace value={openingRollDisplay.computerDie} /> : null}
-      </div>
-    );
-  }
-
-  if (isBoardDiceRolling || game.dice.values.length !== 2) {
-    return <div className="dice-panel" aria-label="Dice" />;
-  }
-
-  const rolledDiceWithUsage = getRolledDiceWithUsage(game);
-
-  return (
-    <div className="dice-panel" aria-label="Dice">
-      {rolledDiceWithUsage.map((die, i) => (
-        <DieFace key={`status-die-${i}`} value={die.value} used={die.used} />
-      ))}
     </div>
   );
 }
@@ -838,7 +788,6 @@ export default function App() {
     }));
   }
 
-  const statusText = openingRollDisplay?.message ?? (isAnimatingMove ? `${playerLabel(game.currentPlayer)} moving...` : describeRequiredAction(game, legalMoves));
 
   function renderPoint(point, isTop) {
     return (
@@ -878,31 +827,15 @@ export default function App() {
         <p className="subtitle">Play as Player against the computer, fully saved in your browser.</p>
       </header>
 
-      <section className="status" aria-live="polite">
-        <div><strong>Turn:</strong> {isComputerTurn ? 'Computer' : 'Player'}</div>
-        <div><strong>Action:</strong> {statusText}</div>
-        <DicePanel game={game} isBoardDiceRolling={isBoardDiceRolling} openingRollDisplay={openingRollDisplay} />
-      </section>
-
-      <section className="controls" aria-label="Game controls">
-        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}>
-          Roll Dice
-        </button>
-        <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove}>New Game</button>
-        <button type="button" onClick={handleUndo} aria-label="Undo" disabled={isAnimatingMove || game.undoStack.length === 0}>Undo</button>
-        <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove}>Reset to Starting Position</button>
-        <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove}>Clear Saved Game</button>
-      </section>
-
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
         <div className="board-shell">
           <div className="board-surface">
             <div className="pip-board-row" aria-label="Pip counts">
-              <div className="pip-box pip-box-computer">
+              <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
                 <span className="pip-box-label">Computer</span>
                 <span className="pip-box-value">PIP: {computerPipCount}</span>
               </div>
-              <div className="pip-box pip-box-player">
+              <div className={`pip-box pip-box-player ${!game.winner && !isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
                 <span className="pip-box-label">Player</span>
                 <span className="pip-box-value">PIP: {playerPipCount}</span>
               </div>
@@ -973,6 +906,16 @@ export default function App() {
             }}
           />
         )}
+      </section>
+
+      <section className="controls" aria-label="Game controls">
+        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}>
+          Roll Dice
+        </button>
+        <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove}>New Game</button>
+        <button type="button" onClick={handleUndo} aria-label="Undo" disabled={isAnimatingMove || game.undoStack.length === 0}>Undo</button>
+        <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove}>Reset to Starting Position</button>
+        <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove}>Clear Saved Game</button>
       </section>
 
       <section className="debug" aria-label="Debug panel">
