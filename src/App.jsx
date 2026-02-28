@@ -26,6 +26,7 @@ const MOVE_START_DELAY_MS = 40;
 const BOARD_DICE_ROLL_MS = 1000;
 const OPENING_ROLL_STEP_DELAY_MS = 1000;
 const COMPUTER_TURN_DELAY_MS = 1000;
+const DICE_USED_STYLE_DELAY_MS = 250;
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -115,13 +116,15 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   );
 }
 
-function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused = false, rollingDiceValues = null }) {
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused = false, rollingDiceValues = null, disableUsedStyling = false }) {
   const isPendingRollAnimation = Array.isArray(rollingDiceValues) && rollingDiceValues.length === 2;
+  // During roll animation we ignore used/remaining styling to prevent grey flicker.
+  const shouldIgnoreUsedStyling = disableUsedStyling || isPendingRollAnimation || isBoardDiceRolling;
   const rolledDiceWithUsage = (isPendingRollAnimation
     ? rollingDiceValues.map((value) => ({ value, used: false }))
     : getRolledDiceWithUsage(game, {
         expandDoubles: !isBoardDiceRolling
-      }).map((die) => (showAllDiceAsUnused ? { ...die, used: false } : die)));
+      }).map((die) => ((showAllDiceAsUnused || shouldIgnoreUsedStyling) ? { ...die, used: false } : die)));
 
   if (rolledDiceWithUsage.length === 0) {
     return null;
@@ -306,12 +309,14 @@ export default function App() {
   const [openingRollDisplay, setOpeningRollDisplay] = useState(null);
   const [pendingRoll, setPendingRoll] = useState(null);
   const [isAnimatingRoll, setIsAnimatingRoll] = useState(false);
+  const [disableUsedDiceStyling, setDisableUsedDiceStyling] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
   const bearOffRefs = useRef({ A: null, B: null });
   const boardDiceRollTimerRef = useRef(null);
+  const usedDiceStylingTimerRef = useRef(null);
   const hasInitializedDiceAnimationRef = useRef(false);
   const openingSequenceIdRef = useRef(0);
   const computerTurnSequenceIdRef = useRef(0);
@@ -458,8 +463,35 @@ export default function App() {
       if (boardDiceRollTimerRef.current) {
         window.clearTimeout(boardDiceRollTimerRef.current);
       }
+      if (usedDiceStylingTimerRef.current) {
+        window.clearTimeout(usedDiceStylingTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (usedDiceStylingTimerRef.current) {
+      window.clearTimeout(usedDiceStylingTimerRef.current);
+      usedDiceStylingTimerRef.current = null;
+    }
+
+    if (isAnyRollAnimationRunning) {
+      setDisableUsedDiceStyling(true);
+      return undefined;
+    }
+
+    usedDiceStylingTimerRef.current = window.setTimeout(() => {
+      setDisableUsedDiceStyling(false);
+      usedDiceStylingTimerRef.current = null;
+    }, DICE_USED_STYLE_DELAY_MS);
+
+    return () => {
+      if (usedDiceStylingTimerRef.current) {
+        window.clearTimeout(usedDiceStylingTimerRef.current);
+        usedDiceStylingTimerRef.current = null;
+      }
+    };
+  }, [isAnyRollAnimationRunning]);
 
   useEffect(() => {
     if (game.winner || game.openingRollPending || !isComputerTurn) {
@@ -981,6 +1013,7 @@ export default function App() {
               isBoardDiceRolling={isAnyRollAnimationRunning}
               showAllDiceAsUnused={false}
               rollingDiceValues={pendingRoll ? [pendingRoll.d1, pendingRoll.d2] : null}
+              disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling}
             />
           </div>
 
