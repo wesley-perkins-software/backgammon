@@ -474,6 +474,20 @@ export default function App() {
         return;
       }
 
+      // Safety net for StrictMode/re-render races: if the computer already has a committed
+      // no-move roll (values present but none remaining), pass that exact roll instead of rerolling.
+      if (game.dice.values.length === 2 && game.dice.remaining.length === 0 && computeLegalMoves(game).length === 0) {
+        const [rolledA, rolledB] = game.dice.values;
+        setGame((prev) => {
+          if (prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0) {
+            return prev;
+          }
+          return pushUndoState(prev, endTurn(prev, `Computer rolled ${rolledA} and ${rolledB} but has no legal moves. Turn passed.`));
+        });
+        setToastMessage(null);
+        return;
+      }
+
       if (game.dice.remaining.length === 0) {
         computerTurnInFlightRef.current = true;
         const sequenceId = computerTurnSequenceIdRef.current + 1;
@@ -483,7 +497,7 @@ export default function App() {
         const d2 = Math.floor(Math.random() * 6) + 1;
 
         const runRollSequence = async () => {
-          const rollId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+          const rollId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
           setPendingRoll({ d1, d2, owner: 'computer', id: rollId });
           setIsAnimatingRoll(true);
           setDiceAnimKey((k) => k + 2);
@@ -493,19 +507,24 @@ export default function App() {
             return;
           }
 
-          if (game.winner || game.currentPlayer !== PLAYER_B || game.dice.remaining.length > 0) {
-            return;
-          }
+          // Keep commit logic on the current state snapshot (inside setGame callback).
+          // A stale closure here previously caused one path to skip commit and another effect to roll again.
+          let committed = null;
+          setGame((prev) => {
+            if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
+              return prev;
+            }
 
-          const rolled = rollDice(game, [d1, d2], { autoPassNoMoves: false });
-          const committed = pushUndoState(game, rolled);
-          suppressNextCommittedRollAnimationRef.current = true;
-          setGame((prev) => (prev === game ? committed : prev));
+            const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
+            committed = pushUndoState(prev, rolled);
+            suppressNextCommittedRollAnimationRef.current = true;
+            return committed;
+          });
 
-          setPendingRoll(null);
+          setPendingRoll((prev) => (prev?.id === rollId ? null : prev));
           setIsAnimatingRoll(false);
 
-          if (computerTurnSequenceIdRef.current !== sequenceId) {
+          if (computerTurnSequenceIdRef.current !== sequenceId || !committed) {
             return;
           }
 
