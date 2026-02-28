@@ -165,7 +165,7 @@ button:focus-visible {
 
 .board-stage {
   position: relative;
-  margin-top: 1.9rem;
+  margin-top: 2.6rem;
 }
 
 .board-shell {
@@ -228,7 +228,7 @@ button:focus-visible {
   position: absolute;
   left: 0;
   right: 0;
-  top: -52px;
+  top: -34px;
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
@@ -237,13 +237,13 @@ button:focus-visible {
 }
 
 .pip-box {
-  min-width: 140px;
-  border-radius: 0.6rem;
+  min-width: 210px;
+  border-radius: 0.72rem;
   border: 2px solid #2f1e13;
   background: linear-gradient(180deg, #fff8e8, #ead0a5);
   color: #2a2219;
   box-shadow: 0 5px 10px rgba(31, 18, 8, 0.28);
-  padding: 0.4rem 0.65rem;
+  padding: 0.62rem 0.92rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -264,16 +264,16 @@ button:focus-visible {
 }
 
 .pip-box-label {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   opacity: 0.88;
 }
 
 .pip-box-value {
-  font-size: 1.08rem;
+  font-size: 1.78rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 .board-dice-overlay {
@@ -767,20 +767,20 @@ button:focus-visible {
 
 @media (max-width: 760px) {
   .board-stage {
-    margin-top: 1.6rem;
+    margin-top: 2.2rem;
   }
 
   .pip-board-row {
-    top: -44px;
+    top: -30px;
   }
 
   .pip-box {
-    min-width: 118px;
-    padding: 0.34rem 0.5rem;
+    min-width: 172px;
+    padding: 0.5rem 0.72rem;
   }
 
   .pip-box-value {
-    font-size: 0.98rem;
+    font-size: 1.35rem;
   }
 
   .app {
@@ -865,26 +865,26 @@ button:focus-visible {
 
 @media (max-width: 560px) {
   .board-stage {
-    margin-top: 1.35rem;
+    margin-top: 1.75rem;
   }
 
   .pip-board-row {
-    top: -40px;
+    top: -24px;
   }
 
   .pip-box {
-    min-width: 98px;
+    min-width: 138px;
     border-width: 1.5px;
-    border-radius: 0.5rem;
-    padding: 0.28rem 0.42rem;
+    border-radius: 0.58rem;
+    padding: 0.4rem 0.56rem;
   }
 
   .pip-box-label {
-    font-size: 0.66rem;
+    font-size: 0.74rem;
   }
 
   .pip-box-value {
-    font-size: 0.86rem;
+    font-size: 1.04rem;
   }
 
   :root {
