@@ -9,7 +9,7 @@ import {
   calculatePipCount,
   computeLegalMoves,
   createInitialState,
-  playerLabel,
+  endTurn,
   pushUndoState,
   restoreState,
   rollDice,
@@ -115,10 +115,14 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   );
 }
 
-function BoardDice({ game, diceAnimKey, isBoardDiceRolling }) {
-  const rolledDiceWithUsage = getRolledDiceWithUsage(game, {
-    expandDoubles: !isBoardDiceRolling
-  });
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused = false, rollingDiceValues = null }) {
+  const isPendingRollAnimation = Array.isArray(rollingDiceValues) && rollingDiceValues.length === 2;
+  const rolledDiceWithUsage = (isPendingRollAnimation
+    ? rollingDiceValues.map((value) => ({ value, used: false }))
+    : getRolledDiceWithUsage(game, {
+        expandDoubles: !isBoardDiceRolling
+      }).map((die) => (showAllDiceAsUnused ? { ...die, used: false } : die)));
+
   if (rolledDiceWithUsage.length === 0) {
     return null;
   }
@@ -300,6 +304,9 @@ export default function App() {
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
   const [openingRollDisplay, setOpeningRollDisplay] = useState(null);
+  const [pendingRoll, setPendingRoll] = useState(null);
+  const [isAnimatingRoll, setIsAnimatingRoll] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
@@ -307,8 +314,12 @@ export default function App() {
   const boardDiceRollTimerRef = useRef(null);
   const hasInitializedDiceAnimationRef = useRef(false);
   const openingSequenceIdRef = useRef(0);
+  const computerTurnSequenceIdRef = useRef(0);
+  const computerTurnInFlightRef = useRef(false);
+  const suppressNextCommittedRollAnimationRef = useRef(false);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
   const isOpeningRollSequenceRunning = game.openingRollPending && Boolean(openingRollDisplay);
+  const isAnyRollAnimationRunning = isBoardDiceRolling || isAnimatingRoll;
 
   const legalMoves = useMemo(() => computeLegalMoves(game), [game]);
   const playerPipCount = useMemo(() => calculatePipCount(game, PLAYER_A), [game]);
@@ -328,7 +339,7 @@ export default function App() {
 
   const forcedBarSelection =
     !game.winner &&
-    !isBoardDiceRolling &&
+    !isAnyRollAnimationRunning &&
     !isAnimatingMove &&
     game.currentPlayer === PLAYER_A &&
     game.dice.remaining.length > 0 &&
@@ -375,7 +386,7 @@ export default function App() {
   }, [activeSelectedSource, game, movesBySource]);
 
   const destinationSet = useMemo(() => {
-    if (isBoardDiceRolling) {
+    if (isAnyRollAnimationRunning) {
       return new Set();
     }
     const set = new Set();
@@ -383,7 +394,7 @@ export default function App() {
       set.add(destinationKey(option.to));
     }
     return set;
-  }, [isBoardDiceRolling, moveOptionsForSelected]);
+  }, [isAnyRollAnimationRunning, moveOptionsForSelected]);
 
   const movableSourceSet = useMemo(() => {
     const set = new Set();
@@ -393,7 +404,7 @@ export default function App() {
     return set;
   }, [legalMoves]);
 
-  const showMovableSources = !isBoardDiceRolling && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
+  const showMovableSources = !isAnyRollAnimationRunning && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
@@ -423,6 +434,12 @@ export default function App() {
     }
 
     if (game.dice.values.length === 2) {
+      if (suppressNextCommittedRollAnimationRef.current) {
+        suppressNextCommittedRollAnimationRef.current = false;
+        setIsBoardDiceRolling(false);
+        return undefined;
+      }
+
       setIsBoardDiceRolling(true);
       setDiceAnimKey((k) => k + 2);
       boardDiceRollTimerRef.current = window.setTimeout(() => {
@@ -448,18 +465,92 @@ export default function App() {
     if (game.winner || game.openingRollPending || !isComputerTurn) {
       return undefined;
     }
-    if (isAnimatingMove || isBoardDiceRolling) {
+    if (isAnimatingMove || isAnyRollAnimationRunning || computerTurnInFlightRef.current) {
       return undefined;
     }
 
     const timer = window.setTimeout(() => {
-      if (game.dice.remaining.length === 0) {
+      if (computerTurnInFlightRef.current) {
+        return;
+      }
+
+      // Safety net for StrictMode/re-render races: if the computer already has a committed
+      // no-move roll (values present but none remaining), pass that exact roll instead of rerolling.
+      if (game.dice.values.length === 2 && game.dice.remaining.length === 0 && computeLegalMoves(game).length === 0) {
+        const [rolledA, rolledB] = game.dice.values;
         setGame((prev) => {
-          if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
+          if (prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0) {
             return prev;
           }
-          startBoardDiceRollVisibilityWindow();
-          return pushUndoState(prev, rollDice(prev));
+          return pushUndoState(prev, endTurn(prev, `Computer rolled ${rolledA} and ${rolledB} but has no legal moves. Turn passed.`));
+        });
+        setToastMessage(null);
+        return;
+      }
+
+      if (game.dice.remaining.length === 0) {
+        computerTurnInFlightRef.current = true;
+        const sequenceId = computerTurnSequenceIdRef.current + 1;
+        computerTurnSequenceIdRef.current = sequenceId;
+
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+
+        const runRollSequence = async () => {
+          const rollId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+          setPendingRoll({ d1, d2, owner: 'computer', id: rollId });
+          setIsAnimatingRoll(true);
+          setDiceAnimKey((k) => k + 2);
+          await wait(BOARD_DICE_ROLL_MS);
+
+          if (computerTurnSequenceIdRef.current !== sequenceId) {
+            return;
+          }
+
+          // Keep commit logic on the current state snapshot (inside setGame callback).
+          // A stale closure here previously caused one path to skip commit and another effect to roll again.
+          let committed = null;
+          setGame((prev) => {
+            if (prev.winner || prev.currentPlayer !== PLAYER_B || prev.dice.remaining.length > 0) {
+              return prev;
+            }
+
+            const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
+            committed = pushUndoState(prev, rolled);
+            suppressNextCommittedRollAnimationRef.current = true;
+            return committed;
+          });
+
+          setPendingRoll((prev) => (prev?.id === rollId ? null : prev));
+          setIsAnimatingRoll(false);
+
+          if (computerTurnSequenceIdRef.current !== sequenceId || !committed) {
+            return;
+          }
+
+          if (computeLegalMoves(committed).length === 0) {
+            const noMovesText = `Computer rolled ${d1} and ${d2} — no legal moves.`;
+            setToastMessage(noMovesText);
+            await wait(700);
+
+            if (computerTurnSequenceIdRef.current !== sequenceId) {
+              return;
+            }
+
+            setGame((prev) => {
+              if (prev.winner || prev.currentPlayer !== PLAYER_B) {
+                return prev;
+              }
+              return pushUndoState(prev, endTurn(prev, `Computer rolled ${d1} and ${d2} but has no legal moves. Turn passed.`));
+            });
+            setToastMessage(null);
+          }
+        };
+
+        void runRollSequence().finally(() => {
+          if (computerTurnSequenceIdRef.current === sequenceId) {
+            computerTurnInFlightRef.current = false;
+          }
         });
         return;
       }
@@ -477,7 +568,7 @@ export default function App() {
     }, COMPUTER_TURN_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [game, isComputerTurn, isAnimatingMove, isBoardDiceRolling]);
+  }, [game, isComputerTurn, isAnimatingMove, isAnyRollAnimationRunning]);
 
   function commit(next) {
     setGame(next);
@@ -535,7 +626,7 @@ export default function App() {
   }
 
   function handleRoll(forced = null) {
-    if (isAnimatingMove || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) {
+    if (isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) {
       return;
     }
 
@@ -554,7 +645,7 @@ export default function App() {
   }
 
   function handleSelectSource(source) {
-    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) {
+    if (isAnyRollAnimationRunning || isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) {
       return;
     }
 
@@ -708,7 +799,7 @@ export default function App() {
   }
 
   function moveToDestination(destination) {
-    if (isBoardDiceRolling || isAnimatingMove || isComputerTurn || activeSelectedSource == null) {
+    if (isAnyRollAnimationRunning || isAnimatingMove || isComputerTurn || activeSelectedSource == null) {
       return;
     }
 
@@ -730,6 +821,11 @@ export default function App() {
       return;
     }
     openingSequenceIdRef.current += 1;
+    computerTurnSequenceIdRef.current += 1;
+    computerTurnInFlightRef.current = false;
+    setPendingRoll(null);
+    setIsAnimatingRoll(false);
+    setToastMessage(null);
     setOpeningRollDisplay(null);
     const reset = createInitialState();
     commit(withUndo(reset));
@@ -741,6 +837,11 @@ export default function App() {
       return;
     }
     openingSequenceIdRef.current += 1;
+    computerTurnSequenceIdRef.current += 1;
+    computerTurnInFlightRef.current = false;
+    setPendingRoll(null);
+    setIsAnimatingRoll(false);
+    setToastMessage(null);
     setOpeningRollDisplay(null);
     const reset = {
       ...createInitialState(),
@@ -756,6 +857,11 @@ export default function App() {
       return;
     }
     openingSequenceIdRef.current += 1;
+    computerTurnSequenceIdRef.current += 1;
+    computerTurnInFlightRef.current = false;
+    setPendingRoll(null);
+    setIsAnimatingRoll(false);
+    setToastMessage(null);
     setOpeningRollDisplay(null);
     const previous = undo(game);
     commit(previous);
@@ -767,6 +873,11 @@ export default function App() {
       return;
     }
     openingSequenceIdRef.current += 1;
+    computerTurnSequenceIdRef.current += 1;
+    computerTurnInFlightRef.current = false;
+    setPendingRoll(null);
+    setIsAnimatingRoll(false);
+    setToastMessage(null);
     setOpeningRollDisplay(null);
     window.localStorage.removeItem(STORAGE_KEY);
     commit(createInitialState());
@@ -864,7 +975,13 @@ export default function App() {
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-            <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isBoardDiceRolling} />
+            <BoardDice
+              game={game}
+              diceAnimKey={diceAnimKey}
+              isBoardDiceRolling={isAnyRollAnimationRunning}
+              showAllDiceAsUnused={false}
+              rollingDiceValues={pendingRoll ? [pendingRoll.d1, pendingRoll.d2] : null}
+            />
           </div>
 
           <aside className="home-rail" aria-label="Bear off area">
@@ -911,14 +1028,20 @@ export default function App() {
         )}
       </section>
 
+      {toastMessage && (
+        <section className="roll-toast" aria-live="polite">
+          {toastMessage}
+        </section>
+      )}
+
       <section className="controls" aria-label="Game controls">
-        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}>
+        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}>
           Roll Dice
         </button>
-        <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove}>New Game</button>
-        <button type="button" onClick={handleUndo} aria-label="Undo" disabled={isAnimatingMove || game.undoStack.length === 0}>Undo</button>
-        <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove}>Reset to Starting Position</button>
-        <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove}>Clear Saved Game</button>
+        <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove || isAnyRollAnimationRunning}>New Game</button>
+        <button type="button" onClick={handleUndo} aria-label="Undo" disabled={isAnimatingMove || isAnyRollAnimationRunning || game.undoStack.length === 0}>Undo</button>
+        <button type="button" onClick={handleResetPosition} aria-label="Reset to Starting Position" disabled={isAnimatingMove || isAnyRollAnimationRunning}>Reset to Starting Position</button>
+        <button type="button" onClick={clearSavedGame} aria-label="Clear Saved Game" disabled={isAnimatingMove || isAnyRollAnimationRunning}>Clear Saved Game</button>
       </section>
 
       <section className="debug" aria-label="Debug panel">
@@ -953,7 +1076,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => handleRoll([game.dev.dieA, game.dev.dieB])}
-              disabled={game.winner || isComputerTurn || isAnimatingMove || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}
+              disabled={game.winner || isComputerTurn || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || game.dice.remaining.length > 0}
             >
               Set Dice + Roll
             </button>
