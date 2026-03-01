@@ -27,6 +27,7 @@ const BOARD_DICE_ROLL_MS = 1000;
 const OPENING_ROLL_DIE_ANIM_MS = BOARD_DICE_ROLL_MS;
 const OPENING_ROLL_DIE_HOLD_MS = 220;
 const OPENING_ROLL_RESULT_MS = 800;
+const OPENING_ROLL_TIE_DELAY_MS = 600;
 const OPENING_ROLL_COMPUTER_START_BEAT_MS = 420;
 const COMPUTER_TURN_DELAY_MS = 1000;
 const DICE_USED_STYLE_DELAY_MS = 250;
@@ -119,7 +120,7 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   );
 }
 
-function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused = false, rollingDiceValues = null, disableUsedStyling = false }) {
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused = false, rollingDiceValues = null, rollingAnimatedMask = null, disableUsedStyling = false }) {
   const isPendingRollAnimation = Array.isArray(rollingDiceValues) && rollingDiceValues.length > 0;
   // During roll animation we ignore used/remaining styling to prevent grey flicker.
   const shouldIgnoreUsedStyling = disableUsedStyling || isPendingRollAnimation || isBoardDiceRolling;
@@ -177,6 +178,10 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused 
   return (
     <div className="board-dice-overlay" aria-hidden="true">
       {rolledDiceWithUsage.map((die, idx) => {
+        const shouldAnimateThisDie = !Array.isArray(rollingAnimatedMask) || rollingAnimatedMask[idx] !== false;
+        if (!shouldAnimateThisDie) {
+          return <DieFace key={`board-static-opening-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />;
+        }
         const dieValue = die.value;
         const finalValue = Math.min(6, Math.max(1, Number(dieValue) || 1));
         const finalOrientation = orientationByValue[finalValue];
@@ -559,7 +564,7 @@ export default function App() {
 
         const runRollSequence = async () => {
           const rollId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-          setPendingRoll({ values: [d1, d2], owner: 'computer', id: rollId });
+          setPendingRoll({ values: [d1, d2], animatedMask: [true, true], owner: 'computer', id: rollId });
           setIsAnimatingRoll(true);
           setDiceAnimKey((k) => k + 2);
           await wait(BOARD_DICE_ROLL_MS);
@@ -667,7 +672,7 @@ export default function App() {
     const computerDie = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
 
     setOpeningRoll({ step: 'playerRolling', playerDie, computerDie: null, winner: null });
-    setPendingRoll({ values: [playerDie], owner: 'opening', id: openingRollId });
+    setPendingRoll({ values: [playerDie], animatedMask: [true], owner: 'opening', id: openingRollId });
     setIsAnimatingRoll(true);
     setDiceAnimKey((k) => k + 2);
     await wait(OPENING_ROLL_DIE_ANIM_MS);
@@ -678,7 +683,7 @@ export default function App() {
     if (didCancel()) return;
 
     setOpeningRoll({ step: 'computerRolling', playerDie, computerDie, winner: null });
-    setPendingRoll({ values: [computerDie], owner: 'opening', id: openingRollId });
+    setPendingRoll({ values: [playerDie, computerDie], animatedMask: [false, true], owner: 'opening', id: openingRollId });
     setIsAnimatingRoll(true);
     setDiceAnimKey((k) => k + 2);
     await wait(OPENING_ROLL_DIE_ANIM_MS);
@@ -692,11 +697,18 @@ export default function App() {
     setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
 
     if (winner === 'tie') {
+      await wait(OPENING_ROLL_TIE_DELAY_MS);
+      if (didCancel()) return;
+      setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
       setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
+      if (!forced) {
+        void runOpeningRollSequence(null);
+      }
       return;
     }
 
     setOpeningRoll({ step: 'idle', playerDie, computerDie, winner });
+    suppressNextCommittedRollAnimationRef.current = true;
     setGame((prev) => {
       if (prev.winner || !prev.openingRollPending || prev.dice.remaining.length > 0) {
         return prev;
@@ -1076,6 +1088,7 @@ export default function App() {
               isBoardDiceRolling={isAnyRollAnimationRunning}
               showAllDiceAsUnused={false}
               rollingDiceValues={pendingRoll?.values ?? null}
+              rollingAnimatedMask={pendingRoll?.animatedMask ?? null}
               disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling}
             />
           </div>
