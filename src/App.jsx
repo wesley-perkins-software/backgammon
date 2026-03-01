@@ -16,6 +16,7 @@ import {
   serializeState,
   undo
 } from './game.js';
+import SEO from './components/SEO.jsx';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
 const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
@@ -1142,6 +1143,11 @@ export default function App() {
 
   return (
     <main className="app">
+      <SEO
+        title="Play Backgammon Online Locally"
+        description="Play Backgammon Local against the computer with automatic local save and beginner-friendly controls."
+        path="/play"
+      />
       <header className="header">
         <h1>Backgammon Local</h1>
         <p className="subtitle">Play as Player against the computer, fully saved in your browser.</p>

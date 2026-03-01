@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-helmet-async": "file:vendor/react-helmet-async",
+    "react-router-dom": "file:vendor/react-router-dom"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.2",
