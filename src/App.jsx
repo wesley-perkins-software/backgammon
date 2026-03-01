@@ -16,6 +16,7 @@ import {
   serializeState,
   undo
 } from './game.js';
+import SEO from './components/SEO.jsx';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
 const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
@@ -307,7 +308,7 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
   );
 }
 
-export default function App() {
+export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Play Backgammon Online Locally", seoDescription = "Play Backgammon Local against the computer with automatic local save and beginner-friendly controls.", showHeader = true, className = "" }) {
   const [game, setGame] = useState(loadInitial);
   const [selectedSource, setSelectedSource] = useState(null);
   const [diceAnimKey, setDiceAnimKey] = useState(0);
@@ -1141,11 +1142,20 @@ export default function App() {
   }
 
   return (
-    <main className="app">
-      <header className="header">
-        <h1>Backgammon Local</h1>
-        <p className="subtitle">Play as Player against the computer, fully saved in your browser.</p>
-      </header>
+    <section className={`app ${className}`.trim()} aria-label="Backgammon game">
+      {showSeo && (
+        <SEO
+          title={seoTitle}
+          description={seoDescription}
+          path={seoPath}
+        />
+      )}
+      {showHeader && (
+        <header className="header">
+          <h1>Backgammon Local</h1>
+          <p className="subtitle">Play as Player against the computer, fully saved in your browser.</p>
+        </header>
+      )}
 
       <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
         {gamePhase === 'OPENING_ROLL' && (
@@ -1306,6 +1316,6 @@ export default function App() {
           </div>
         )}
       </section>
-    </main>
+    </section>
   );
 }
