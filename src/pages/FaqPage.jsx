@@ -11,7 +11,7 @@ const faqItems = [
   },
   {
     q: 'Is this random?',
-    a: 'Yes. Dice values are generated in-browser for each roll, so outcomes are unpredictable from game to game.'
+    a: "Yes. Dice values use cryptographically secure randomness when available (via your browser's crypto API), with a Math.random() fallback if crypto is unavailable."
   },
   {
     q: 'Does it save my game?',
