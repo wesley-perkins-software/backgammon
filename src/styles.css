@@ -1125,3 +1125,95 @@ button:focus-visible {
   color: #2a2219;
   font-weight: 700;
 }
+
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -40px;
+  background: #fff4de;
+  color: #2a2219;
+  border: 2px solid #5b412d;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.55rem;
+  z-index: 1000;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.site-header-inner,
+.site-footer-nav {
+  padding: 0.5rem 0.85rem;
+}
+
+.site-main {
+  padding: 0.35rem 0.85rem 1.6rem;
+}
+
+.home-game-hero {
+  margin-top: 0.15rem;
+}
+
+.home-hero-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.2rem;
+}
+
+.home-hero-topline h1 {
+  font-size: clamp(1.35rem, 2.1vw, 1.8rem);
+  margin: 0;
+}
+
+.home-embedded-game {
+  padding: 0.2rem 0;
+}
+
+.home-embedded-game .header {
+  display: none;
+}
+
+.home-content-stack {
+  margin-top: 0.7rem;
+}
+
+.home-content-stack section + section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(70, 45, 27, 0.22);
+}
+
+.cta-secondary {
+  font-size: 0.86rem;
+  padding: 0.4rem 0.65rem;
+}
+
+@media (max-width: 560px) {
+  .site-header-inner,
+  .site-footer-nav,
+  .site-main {
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+  }
+
+  .site-main {
+    padding-top: 0.2rem;
+  }
+
+  .home-hero-topline {
+    margin-bottom: 0.1rem;
+  }
+
+  .home-hero-topline h1 {
+    font-size: 1.2rem;
+  }
+
+  .home-embedded-game .app {
+    padding: 0.25rem 0;
+  }
+}
