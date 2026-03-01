@@ -24,7 +24,8 @@ const BOTTOM_RIGHT = [5, 4, 3, 2, 1, 0];
 const MOVE_STEP_MS = 210;
 const MOVE_START_DELAY_MS = 40;
 const BOARD_DICE_ROLL_MS = 1000;
-const OPENING_ROLL_DIE_ANIM_MS = 550;
+const OPENING_ROLL_DIE_ANIM_MS = BOARD_DICE_ROLL_MS;
+const OPENING_ROLL_DIE_HOLD_MS = 220;
 const OPENING_ROLL_RESULT_MS = 800;
 const OPENING_ROLL_COMPUTER_START_BEAT_MS = 420;
 const COMPUTER_TURN_DELAY_MS = 1000;
@@ -199,39 +200,6 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused 
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function OpeningRollBoardOverlay({ phase, openingRoll }) {
-  if (phase !== 'OPENING_ROLL') {
-    return null;
-  }
-
-  const showPlayerDie = Boolean(openingRoll.playerDie) && ['playerRolling', 'computerRolling', 'result'].includes(openingRoll.step);
-  const showComputerDie = Boolean(openingRoll.computerDie) && ['computerRolling', 'result'].includes(openingRoll.step);
-
-  return (
-    <div className="boardOverlay" aria-hidden="true">
-      <div className="openingRollSlot openingRollSlotLeft">
-        <span className="openingRollSlotLabel">Computer</span>
-        {showComputerDie && (
-          <DieFace
-            value={openingRoll.computerDie}
-            className={`openingRollBoardDie ${openingRoll.step === 'computerRolling' ? 'opening-die-rolling' : ''}`.trim()}
-          />
-        )}
-      </div>
-
-      <div className="openingRollSlot openingRollSlotRight">
-        <span className="openingRollSlotLabel">You</span>
-        {showPlayerDie && (
-          <DieFace
-            value={openingRoll.playerDie}
-            className={`openingRollBoardDie ${openingRoll.step === 'playerRolling' ? 'opening-die-rolling' : ''}`.trim()}
-          />
-        )}
-      </div>
     </div>
   );
 }
@@ -591,7 +559,7 @@ export default function App() {
 
         const runRollSequence = async () => {
           const rollId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-          setPendingRoll({ d1, d2, owner: 'computer', id: rollId });
+          setPendingRoll({ values: [d1, d2], owner: 'computer', id: rollId });
           setIsAnimatingRoll(true);
           setDiceAnimKey((k) => k + 2);
           await wait(BOARD_DICE_ROLL_MS);
@@ -685,22 +653,43 @@ export default function App() {
   async function runOpeningRollSequence(forced = null) {
     const sequenceId = openingSequenceIdRef.current + 1;
     openingSequenceIdRef.current = sequenceId;
+    const openingRollId = globalThis.crypto?.randomUUID?.() ?? `opening-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const didCancel = () => {
+      if (openingSequenceIdRef.current === sequenceId) {
+        return false;
+      }
+      setIsAnimatingRoll(false);
+      setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
+      return true;
+    };
 
     const playerDie = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
     const computerDie = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
 
     setOpeningRoll({ step: 'playerRolling', playerDie, computerDie: null, winner: null });
+    setPendingRoll({ values: [playerDie], owner: 'opening', id: openingRollId });
+    setIsAnimatingRoll(true);
+    setDiceAnimKey((k) => k + 2);
     await wait(OPENING_ROLL_DIE_ANIM_MS);
-    if (openingSequenceIdRef.current !== sequenceId) return;
+    if (didCancel()) return;
+    setIsAnimatingRoll(false);
+
+    await wait(OPENING_ROLL_DIE_HOLD_MS);
+    if (didCancel()) return;
 
     setOpeningRoll({ step: 'computerRolling', playerDie, computerDie, winner: null });
+    setPendingRoll({ values: [computerDie], owner: 'opening', id: openingRollId });
+    setIsAnimatingRoll(true);
+    setDiceAnimKey((k) => k + 2);
     await wait(OPENING_ROLL_DIE_ANIM_MS);
-    if (openingSequenceIdRef.current !== sequenceId) return;
+    if (didCancel()) return;
+    setIsAnimatingRoll(false);
 
     const winner = playerDie === computerDie ? 'tie' : playerDie > computerDie ? 'player' : 'computer';
     setOpeningRoll({ step: 'result', playerDie, computerDie, winner });
     await wait(OPENING_ROLL_RESULT_MS);
-    if (openingSequenceIdRef.current !== sequenceId) return;
+    if (didCancel()) return;
+    setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
 
     if (winner === 'tie') {
       setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
@@ -1081,13 +1070,12 @@ export default function App() {
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-            <OpeningRollBoardOverlay phase={gamePhase} openingRoll={openingRoll} />
             <BoardDice
               game={game}
               diceAnimKey={diceAnimKey}
               isBoardDiceRolling={isAnyRollAnimationRunning}
               showAllDiceAsUnused={false}
-              rollingDiceValues={pendingRoll ? [pendingRoll.d1, pendingRoll.d2] : null}
+              rollingDiceValues={pendingRoll?.values ?? null}
               disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling}
             />
           </div>
