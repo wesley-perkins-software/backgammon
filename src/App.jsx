@@ -324,6 +324,7 @@ export default function App() {
   const [isAnimatingRoll, setIsAnimatingRoll] = useState(false);
   const [disableUsedDiceStyling, setDisableUsedDiceStyling] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [turnResolutionPhase, setTurnResolutionPhase] = useState('IDLE');
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
   const barRef = useRef(null);
@@ -522,6 +523,40 @@ export default function App() {
   }, [isAnyRollAnimationRunning]);
 
   useEffect(() => {
+    if (gamePhase === 'OPENING_ROLL' || isComputerTurn || game.winner || isAnimatingRoll) {
+      return undefined;
+    }
+
+    const isPlayerNoMoveRoll =
+      game.currentPlayer === PLAYER_A &&
+      game.dice.values.length === 2 &&
+      game.dice.remaining.length === 0 &&
+      computeLegalMoves(game).length === 0;
+
+    if (!isPlayerNoMoveRoll || turnResolutionPhase !== 'IDLE') {
+      return undefined;
+    }
+
+    setTurnResolutionPhase('NO_MOVES');
+    setToastMessage('No legal moves — passing turn.');
+
+    const timer = window.setTimeout(() => {
+      setTurnResolutionPhase('TURN_ENDING');
+      setGame((prev) => {
+        if (prev.winner || prev.currentPlayer !== PLAYER_A || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 || computeLegalMoves(prev).length !== 0) {
+          return prev;
+        }
+        const [rolledA, rolledB] = prev.dice.values;
+        return pushUndoState(prev, endTurn(prev, `Player rolled ${rolledA} and ${rolledB} but has no legal moves. Turn passed.`));
+      });
+      setToastMessage(null);
+      setTurnResolutionPhase('IDLE');
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [game, gamePhase, isAnimatingRoll, isComputerTurn, turnResolutionPhase]);
+
+  useEffect(() => {
     if (game.winner || game.openingRollPending || !isComputerTurn) {
       return undefined;
     }
@@ -712,7 +747,7 @@ export default function App() {
   }
 
   function handleRoll(forced = null) {
-    if (isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) {
+    if (turnResolutionPhase === 'NO_MOVES' || turnResolutionPhase === 'TURN_ENDING' || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) {
       return;
     }
 
@@ -733,37 +768,20 @@ export default function App() {
 
       await wait(BOARD_DICE_ROLL_MS);
 
-      let committed = null;
       setGame((prev) => {
         if (prev.winner || prev.currentPlayer !== PLAYER_A || prev.openingRollPending || prev.dice.remaining.length > 0) {
           return prev;
         }
 
         const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
-        committed = pushUndoState(prev, rolled);
         suppressNextCommittedRollAnimationRef.current = true;
-        return committed;
+        return pushUndoState(prev, rolled);
       });
 
       setPendingRoll((prev) => (prev?.id === rollId ? null : prev));
       setIsAnimatingRoll(false);
 
-      if (!committed) {
-        return;
-      }
-
       // Always animate dice before resolving no-move outcomes.
-      if (computeLegalMoves(committed).length === 0) {
-        setToastMessage('No legal moves — passing turn.');
-        await wait(700);
-        setGame((prev) => {
-          if (prev.winner || prev.currentPlayer !== PLAYER_A) {
-            return prev;
-          }
-          return pushUndoState(prev, endTurn(prev, `Player rolled ${d1} and ${d2} but has no legal moves. Turn passed.`));
-        });
-        setToastMessage(null);
-      }
     };
 
     void runPlayerRollSequence();
@@ -1178,7 +1196,7 @@ export default function App() {
       )}
 
       <section className="controls" aria-label="Game controls">
-        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={game.winner || isComputerTurn || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (gamePhase !== 'OPENING_ROLL' && game.dice.remaining.length > 0)}>
+        <button type="button" onClick={() => handleRoll()} aria-label="Roll Dice" disabled={turnResolutionPhase !== 'IDLE' || game.winner || isComputerTurn || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (gamePhase !== 'OPENING_ROLL' && game.dice.remaining.length > 0)}>
           Roll Dice
         </button>
         <button type="button" onClick={handleNewGame} aria-label="New Game" disabled={isAnimatingMove || isAnyRollAnimationRunning}>New Game</button>
@@ -1219,7 +1237,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => handleRoll([game.dev.dieA, game.dev.dieB])}
-              disabled={game.winner || isComputerTurn || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (gamePhase !== 'OPENING_ROLL' && game.dice.remaining.length > 0)}
+              disabled={turnResolutionPhase !== 'IDLE' || game.winner || isComputerTurn || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (gamePhase !== 'OPENING_ROLL' && game.dice.remaining.length > 0)}
             >
               Set Dice + Roll
             </button>
