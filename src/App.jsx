@@ -315,7 +315,7 @@ export default function App() {
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
   const [openingRoll, setOpeningRoll] = useState({
-    step: 'idle',
+    step: 'WAITING_FOR_PLAYER',
     playerDie: null,
     computerDie: null,
     winner: null
@@ -339,15 +339,16 @@ export default function App() {
   const openingComputerStartBeatUntilRef = useRef(0);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
   const gamePhase = game.openingRollPending ? 'OPENING_ROLL' : 'TURN_PLAY';
-  const isOpeningRollSequenceRunning = gamePhase === 'OPENING_ROLL' && openingRoll.step !== 'idle';
+  const isOpeningRollSequenceRunning =
+    gamePhase === 'OPENING_ROLL' && (openingRoll.step === 'PLAYER_ROLLING' || openingRoll.step === 'COMPUTER_ROLLING' || openingRoll.step === 'DONE');
   const isAnyRollAnimationRunning = isBoardDiceRolling || isAnimatingRoll;
   const openingMessage = (() => {
     if (gamePhase !== 'OPENING_ROLL') {
       return game.statusText;
     }
-    if (openingRoll.step === 'playerRolling') return 'Opening roll — highest die goes first. You roll…';
-    if (openingRoll.step === 'computerRolling') return 'Opening roll — highest die goes first. Computer rolls…';
-    if (openingRoll.step === 'result') {
+    if (openingRoll.step === 'PLAYER_ROLLING') return 'Opening roll — highest die goes first. You roll…';
+    if (openingRoll.step === 'COMPUTER_ROLLING') return 'Opening roll — highest die goes first. Computer rolls…';
+    if (openingRoll.step === 'DONE') {
       if (openingRoll.winner === 'player') return 'Opening roll — highest die goes first. You go first.';
       if (openingRoll.winner === 'computer') return 'Opening roll — highest die goes first. Computer goes first.';
       return 'Opening roll — highest die goes first. Tie — roll again.';
@@ -439,7 +440,11 @@ export default function App() {
   }, [legalMoves]);
 
   const showMovableSources = !isAnyRollAnimationRunning && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
-  const canPlayerRoll = !game.winner && gamePhase !== 'OPENING_ROLL' && game.currentPlayer === PLAYER_A && playerTurnPhase === 'NEED_ROLL';
+  const canPlayerRoll =
+    !game.winner &&
+    !isAnyRollAnimationRunning &&
+    ((gamePhase === 'OPENING_ROLL' && openingRoll.step === 'WAITING_FOR_PLAYER') ||
+      (gamePhase === 'TURN_PLAY' && game.currentPlayer === PLAYER_A && playerTurnPhase === 'NEED_ROLL'));
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, serializeState(game));
@@ -585,9 +590,21 @@ export default function App() {
       return;
     }
 
+    // Guard against effect-order races: right after a committed roll (including opening roll),
+    // playerTurnPhase may still be NEED_ROLL for one render while dice.remaining already has
+    // playable dice. Never clear dice in that case.
+    if (game.dice.remaining.length > 0) {
+      return;
+    }
+
     console.warn('Clearing stale player dice while waiting for roll.');
     setGame((prev) => {
-      if (prev.currentPlayer !== PLAYER_A || prev.openingRollPending || prev.dice.values.length === 0 && prev.dice.remaining.length === 0) {
+      if (
+        prev.currentPlayer !== PLAYER_A ||
+        prev.openingRollPending ||
+        (prev.dice.values.length === 0 && prev.dice.remaining.length === 0) ||
+        prev.dice.remaining.length > 0
+      ) {
         return prev;
       }
       return {
@@ -739,7 +756,7 @@ export default function App() {
     const playerDie = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
     const computerDie = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
 
-    setOpeningRoll({ step: 'playerRolling', playerDie, computerDie: null, winner: null });
+    setOpeningRoll({ step: 'PLAYER_ROLLING', playerDie, computerDie: null, winner: null });
     setPendingRoll({ values: [playerDie], animatedMask: [true], owner: 'opening', id: openingRollId });
     setIsAnimatingRoll(true);
     setDiceAnimKey((k) => k + 2);
@@ -750,7 +767,7 @@ export default function App() {
     await wait(OPENING_ROLL_DIE_HOLD_MS);
     if (didCancel()) return;
 
-    setOpeningRoll({ step: 'computerRolling', playerDie, computerDie, winner: null });
+    setOpeningRoll({ step: 'COMPUTER_ROLLING', playerDie, computerDie, winner: null });
     setPendingRoll({ values: [playerDie, computerDie], animatedMask: [false, true], owner: 'opening', id: openingRollId });
     setIsAnimatingRoll(true);
     setDiceAnimKey((k) => k + 2);
@@ -759,7 +776,7 @@ export default function App() {
     setIsAnimatingRoll(false);
 
     const winner = playerDie === computerDie ? 'tie' : playerDie > computerDie ? 'player' : 'computer';
-    setOpeningRoll({ step: 'result', playerDie, computerDie, winner });
+    setOpeningRoll({ step: 'DONE', playerDie, computerDie, winner });
     await wait(OPENING_ROLL_RESULT_MS);
     if (didCancel()) return;
     setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
@@ -768,14 +785,14 @@ export default function App() {
       await wait(OPENING_ROLL_TIE_DELAY_MS);
       if (didCancel()) return;
       setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
-      setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
+      setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
       if (!forced) {
         void runOpeningRollSequence(null);
       }
       return;
     }
 
-    setOpeningRoll({ step: 'idle', playerDie, computerDie, winner });
+    setOpeningRoll({ step: 'DONE', playerDie, computerDie, winner });
     suppressNextCommittedRollAnimationRef.current = true;
     setGame((prev) => {
       if (prev.winner || !prev.openingRollPending || prev.dice.remaining.length > 0) {
@@ -1015,7 +1032,7 @@ export default function App() {
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
+    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     const reset = createInitialState();
     commit(withUndo(reset));
     setSelectedSource(null);
@@ -1032,7 +1049,7 @@ export default function App() {
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
+    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     const reset = {
       ...createInitialState(),
       undoStack: game.undoStack,
@@ -1053,7 +1070,7 @@ export default function App() {
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
+    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     const previous = undo(game);
     commit(previous);
     setSelectedSource(null);
@@ -1070,7 +1087,7 @@ export default function App() {
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'idle', playerDie: null, computerDie: null, winner: null });
+    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     window.localStorage.removeItem(STORAGE_KEY);
     commit(createInitialState());
     setSelectedSource(null);
