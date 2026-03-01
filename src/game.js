@@ -463,21 +463,30 @@ export function rollDice(state, forcedValues = null, options = {}) {
     if (openerA === openerB) {
       return {
         ...cloneState(state),
-        dice: { values: [openerA, openerB], remaining: [] },
+        dice: { values: [], remaining: [] },
         statusText: `Opening roll tied at ${openerA}-${openerB}. Roll again.`
       };
     }
 
     const startingPlayer = openerA > openerB ? PLAYER_A : PLAYER_B;
+    const startText =
+      startingPlayer === PLAYER_A
+        ? `You go first with ${openerA} and ${openerB}.`
+        : `Computer goes first with ${openerB} and ${openerA}.`;
+
+    const openingValues = startingPlayer === PLAYER_A ? [openerA, openerB] : [openerB, openerA];
+    const [d1, d2] = openingValues;
+    const remaining = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
+
     return {
       ...cloneState(state),
       currentPlayer: startingPlayer,
       openingRollPending: false,
       dice: {
-        values: [openerA, openerB],
-        remaining: [openerA, openerB]
+        values: openingValues,
+        remaining
       },
-      statusText: `${playerLabel(startingPlayer)} starts with ${openerA} and ${openerB}.`
+      statusText: startText
     };
   }
 
