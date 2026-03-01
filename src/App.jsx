@@ -203,6 +203,39 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, showAllDiceAsUnused 
   );
 }
 
+function OpeningRollBoardOverlay({ phase, openingRoll }) {
+  if (phase !== 'OPENING_ROLL') {
+    return null;
+  }
+
+  const showPlayerDie = Boolean(openingRoll.playerDie) && ['playerRolling', 'computerRolling', 'result'].includes(openingRoll.step);
+  const showComputerDie = Boolean(openingRoll.computerDie) && ['computerRolling', 'result'].includes(openingRoll.step);
+
+  return (
+    <div className="boardOverlay" aria-hidden="true">
+      <div className="openingRollSlot openingRollSlotLeft">
+        <span className="openingRollSlotLabel">Computer</span>
+        {showComputerDie && (
+          <DieFace
+            value={openingRoll.computerDie}
+            className={`openingRollBoardDie ${openingRoll.step === 'computerRolling' ? 'opening-die-rolling' : ''}`.trim()}
+          />
+        )}
+      </div>
+
+      <div className="openingRollSlot openingRollSlotRight">
+        <span className="openingRollSlotLabel">You</span>
+        {showPlayerDie && (
+          <DieFace
+            value={openingRoll.playerDie}
+            className={`openingRollBoardDie ${openingRoll.step === 'playerRolling' ? 'opening-die-rolling' : ''}`.trim()}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Point({ index, value, selected, highlighted, movable, onClick, isTop, pointRef }) {
   const owner = pointOwner(value);
   const count = checkerCount(value);
@@ -1009,24 +1042,6 @@ export default function App() {
         {gamePhase === 'OPENING_ROLL' && (
           <section className="opening-roll-panel" aria-live="polite">
             <p className="opening-roll-message">{openingMessage}</p>
-            <div className="opening-roll-dice-row" aria-label="Opening roll dice">
-              <div className="opening-roll-die-slot">
-                <span className="opening-roll-label">Computer</span>
-                {openingRoll.computerDie ? (
-                  <DieFace value={openingRoll.computerDie} className={openingRoll.step === 'computerRolling' ? 'opening-die-rolling' : ''} />
-                ) : (
-                  <div className="die opening-die-empty" aria-hidden="true" />
-                )}
-              </div>
-              <div className="opening-roll-die-slot opening-roll-die-slot-player">
-                <span className="opening-roll-label">You</span>
-                {openingRoll.playerDie ? (
-                  <DieFace value={openingRoll.playerDie} className={openingRoll.step === 'playerRolling' ? 'opening-die-rolling' : ''} />
-                ) : (
-                  <div className="die opening-die-empty" aria-hidden="true" />
-                )}
-              </div>
-            </div>
           </section>
         )}
 
@@ -1066,6 +1081,7 @@ export default function App() {
 
             <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
             <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
+            <OpeningRollBoardOverlay phase={gamePhase} openingRoll={openingRoll} />
             <BoardDice
               game={game}
               diceAnimKey={diceAnimKey}
