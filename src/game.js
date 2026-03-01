@@ -1,3 +1,5 @@
+import { rollDie1to6 } from './random.js';
+
 export const STORAGE_KEY = 'backgammon.save.v1';
 export const SCHEMA_VERSION = 1;
 
@@ -457,8 +459,8 @@ export function rollDice(state, forcedValues = null, options = {}) {
   }
 
   if (state.openingRollPending) {
-    const openerA = forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
-    const openerB = forcedValues?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+    const openerA = forcedValues?.[0] ?? rollDie1to6();
+    const openerB = forcedValues?.[1] ?? rollDie1to6();
 
     if (openerA === openerB) {
       return {
@@ -490,8 +492,8 @@ export function rollDice(state, forcedValues = null, options = {}) {
     };
   }
 
-  const d1 = forcedValues?.[0] ?? (Math.floor(Math.random() * 6) + 1);
-  const d2 = forcedValues?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+  const d1 = forcedValues?.[0] ?? rollDie1to6();
+  const d2 = forcedValues?.[1] ?? rollDie1to6();
   const remaining = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
 
   let next = {

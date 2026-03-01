@@ -17,6 +17,7 @@ import {
   undo
 } from './game.js';
 import SEO from './components/SEO.jsx';
+import { rollDie1to6 } from './random.js';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
 const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
@@ -656,8 +657,8 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
         const sequenceId = computerTurnSequenceIdRef.current + 1;
         computerTurnSequenceIdRef.current = sequenceId;
 
-        const d1 = Math.floor(Math.random() * 6) + 1;
-        const d2 = Math.floor(Math.random() * 6) + 1;
+        const d1 = rollDie1to6();
+        const d2 = rollDie1to6();
 
         const runRollSequence = async () => {
           const rollId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -754,8 +755,8 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return true;
     };
 
-    const playerDie = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
-    const computerDie = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+    const playerDie = forced?.[0] ?? (rollDie1to6());
+    const computerDie = forced?.[1] ?? (rollDie1to6());
 
     setOpeningRoll({ step: 'PLAYER_ROLLING', playerDie, computerDie: null, winner: null });
     setPendingRoll({ values: [playerDie], animatedMask: [true], owner: 'opening', id: openingRollId });
@@ -818,8 +819,8 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return;
     }
 
-    const d1 = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
-    const d2 = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+    const d1 = forced?.[0] ?? (rollDie1to6());
+    const d2 = forced?.[1] ?? (rollDie1to6());
     const rollId = globalThis.crypto?.randomUUID?.() ?? `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     const runPlayerRollSequence = async () => {
