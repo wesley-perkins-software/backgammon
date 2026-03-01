@@ -644,17 +644,6 @@ export default function App() {
     return pushUndoState(game, nextState);
   }
 
-  function startBoardDiceRollVisibilityWindow() {
-    if (boardDiceRollTimerRef.current) {
-      window.clearTimeout(boardDiceRollTimerRef.current);
-    }
-    setIsBoardDiceRolling(true);
-    boardDiceRollTimerRef.current = window.setTimeout(() => {
-      setIsBoardDiceRolling(false);
-      boardDiceRollTimerRef.current = null;
-    }, BOARD_DICE_ROLL_MS);
-  }
-
   async function runOpeningRollSequence(forced = null) {
     const sequenceId = openingSequenceIdRef.current + 1;
     openingSequenceIdRef.current = sequenceId;
@@ -732,13 +721,52 @@ export default function App() {
       return;
     }
 
-    const rolled = rollDice(game, forced);
-    if (rolled === game) {
-      return;
-    }
-    startBoardDiceRollVisibilityWindow();
-    commit(withUndo(rolled));
-    setSelectedSource(null);
+    const d1 = forced?.[0] ?? (Math.floor(Math.random() * 6) + 1);
+    const d2 = forced?.[1] ?? (Math.floor(Math.random() * 6) + 1);
+    const rollId = globalThis.crypto?.randomUUID?.() ?? `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const runPlayerRollSequence = async () => {
+      setPendingRoll({ values: [d1, d2], animatedMask: [true, true], owner: 'player', id: rollId });
+      setIsAnimatingRoll(true);
+      setDiceAnimKey((k) => k + 2);
+      setSelectedSource(null);
+
+      await wait(BOARD_DICE_ROLL_MS);
+
+      let committed = null;
+      setGame((prev) => {
+        if (prev.winner || prev.currentPlayer !== PLAYER_A || prev.openingRollPending || prev.dice.remaining.length > 0) {
+          return prev;
+        }
+
+        const rolled = rollDice(prev, [d1, d2], { autoPassNoMoves: false });
+        committed = pushUndoState(prev, rolled);
+        suppressNextCommittedRollAnimationRef.current = true;
+        return committed;
+      });
+
+      setPendingRoll((prev) => (prev?.id === rollId ? null : prev));
+      setIsAnimatingRoll(false);
+
+      if (!committed) {
+        return;
+      }
+
+      // Always animate dice before resolving no-move outcomes.
+      if (computeLegalMoves(committed).length === 0) {
+        setToastMessage('No legal moves — passing turn.');
+        await wait(700);
+        setGame((prev) => {
+          if (prev.winner || prev.currentPlayer !== PLAYER_A) {
+            return prev;
+          }
+          return pushUndoState(prev, endTurn(prev, `Player rolled ${d1} and ${d2} but has no legal moves. Turn passed.`));
+        });
+        setToastMessage(null);
+      }
+    };
+
+    void runPlayerRollSequence();
   }
 
   function handleSelectSource(source) {
