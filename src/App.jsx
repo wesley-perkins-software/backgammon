@@ -590,9 +590,21 @@ export default function App() {
       return;
     }
 
+    // Guard against effect-order races: right after a committed roll (including opening roll),
+    // playerTurnPhase may still be NEED_ROLL for one render while dice.remaining already has
+    // playable dice. Never clear dice in that case.
+    if (game.dice.remaining.length > 0) {
+      return;
+    }
+
     console.warn('Clearing stale player dice while waiting for roll.');
     setGame((prev) => {
-      if (prev.currentPlayer !== PLAYER_A || prev.openingRollPending || prev.dice.values.length === 0 && prev.dice.remaining.length === 0) {
+      if (
+        prev.currentPlayer !== PLAYER_A ||
+        prev.openingRollPending ||
+        (prev.dice.values.length === 0 && prev.dice.remaining.length === 0) ||
+        prev.dice.remaining.length > 0
+      ) {
         return prev;
       }
       return {
