@@ -75,6 +75,54 @@ body {
   box-shadow: 0 4px 10px rgba(45, 25, 10, 0.16);
 }
 
+.opening-roll-panel {
+  margin-bottom: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.7rem;
+  border: 2px solid #6a4a30;
+  background: linear-gradient(180deg, #fff4dc, #efd2a3);
+  box-shadow: 0 4px 10px rgba(45, 25, 10, 0.16);
+}
+
+.opening-roll-message {
+  margin: 0;
+  font-weight: 700;
+  color: #2b2017;
+}
+
+.opening-roll-dice-row {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.opening-roll-die-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.opening-roll-die-slot-player {
+  align-items: flex-end;
+}
+
+.opening-roll-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.opening-die-empty {
+  opacity: 0.3;
+}
+
+.opening-die-rolling {
+  animation: dieRoll 550ms cubic-bezier(0.24, 0.75, 0.36, 1) forwards;
+}
+
 .controls {
   margin-top: 0.75rem;
   display: flex;
