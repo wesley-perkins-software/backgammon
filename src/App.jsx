@@ -379,16 +379,52 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     return sourceMoves;
   }, [activeSelectedSource, movesBySource]);
 
+  const chainOptionsForSelected = useMemo(() => {
+    if (activeSelectedSource == null) {
+      return [];
+    }
+
+    const options = [];
+    for (const firstMove of moveOptionsForSelected) {
+      const afterFirst = applyMove(game, firstMove);
+      if (afterFirst.currentPlayer !== game.currentPlayer || afterFirst.winner) {
+        continue;
+      }
+
+      const secondMoves = computeLegalMoves(afterFirst);
+      for (const secondMove of secondMoves) {
+        if (destinationKey(secondMove.from) !== destinationKey(firstMove.to)) {
+          continue;
+        }
+        options.push({
+          to: secondMove.to,
+          moves: [firstMove, secondMove],
+          kind: 'chain'
+        });
+      }
+    }
+
+    return options;
+  }, [activeSelectedSource, game, moveOptionsForSelected]);
+
+  const destinationOptionsForSelected = useMemo(
+    () => [
+      ...moveOptionsForSelected.map((move) => ({ to: move.to, moves: [move], kind: 'single' })),
+      ...chainOptionsForSelected
+    ],
+    [moveOptionsForSelected, chainOptionsForSelected]
+  );
+
   const destinationSet = useMemo(() => {
     if (isAnyRollAnimationRunning) {
       return new Set();
     }
     const set = new Set();
-    for (const move of moveOptionsForSelected) {
-      set.add(destinationKey(move.to));
+    for (const option of destinationOptionsForSelected) {
+      set.add(destinationKey(option.to));
     }
     return set;
-  }, [isAnyRollAnimationRunning, moveOptionsForSelected]);
+  }, [destinationOptionsForSelected, isAnyRollAnimationRunning]);
 
   const movableSourceSet = useMemo(() => {
     const set = new Set();
@@ -941,17 +977,41 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return;
     }
 
-    const candidates = moveOptionsForSelected.filter((move) => destinationKey(move.to) === destinationKey(destination));
-    if (!candidates.length) {
+    const destinationId = destinationKey(destination);
+    const singleCandidates = destinationOptionsForSelected.filter(
+      (option) => option.kind === 'single' && destinationKey(option.to) === destinationId
+    );
+    const chainCandidates = destinationOptionsForSelected.filter(
+      (option) => option.kind === 'chain' && destinationKey(option.to) === destinationId
+    );
+
+    if (!singleCandidates.length && !chainCandidates.length) {
       return;
     }
 
-    const chosenMove = chooseMoveForDestination(game, candidates);
-    if (!chosenMove) {
+    let chosenOption = null;
+    if (!singleCandidates.length && chainCandidates.length) {
+      const preferredFirstMove = chooseMoveForDestination(
+        game,
+        chainCandidates.map((option) => option.moves[0])
+      );
+      chosenOption =
+        chainCandidates.find((option) => option.moves[0] === preferredFirstMove) ?? chainCandidates[0];
+    } else if (singleCandidates.length) {
+      const chosenMove = chooseMoveForDestination(
+        game,
+        singleCandidates.map((option) => option.moves[0])
+      );
+      chosenOption = singleCandidates.find((option) => option.moves[0] === chosenMove) ?? singleCandidates[0];
+    } else {
+      chosenOption = chainCandidates[0];
+    }
+
+    if (!chosenOption) {
       return;
     }
 
-    void performMoveSequence(game, [chosenMove]);
+    void performMoveSequence(game, chosenOption.moves);
   }
 
   function handleNewGame() {
