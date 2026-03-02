@@ -319,12 +319,13 @@ export function computeLegalMoves(state) {
   return firstMoves;
 }
 
-export function hasLegalMoves(dice, boardState) {
-  if (!Array.isArray(dice) || dice.length === 0 || boardState?.winner) {
+export function hasLegalMoves(dice, boardState, player = boardState?.currentPlayer) {
+  if (!Array.isArray(dice) || dice.length === 0 || boardState?.winner || !player) {
     return false;
   }
   return computeLegalMoves({
     ...boardState,
+    currentPlayer: player,
     dice: {
       ...boardState.dice,
       remaining: [...dice]
@@ -475,7 +476,7 @@ export function resolveMove(state, move) {
   const nextRemainingDice = [...nextState.dice.remaining];
   const didEndTurn =
     nextRemainingDice.length === 0 ||
-    !hasLegalMoves(nextRemainingDice, nextState);
+    !hasLegalMoves(nextRemainingDice, nextState, state.currentPlayer);
 
   return {
     nextBoard: {
