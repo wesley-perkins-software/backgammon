@@ -39,10 +39,6 @@ function wait(ms) {
   });
 }
 
-function moveMatches(a, b) {
-  return a && b && a.from === b.from && a.to === b.to && a.dieUsed === b.dieUsed;
-}
-
 function pointOwner(value) {
   if (value > 0) return 'A';
   if (value < 0) return 'B';
@@ -380,46 +376,16 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return [];
     }
     const sourceMoves = movesBySource.get(sourceKey(activeSelectedSource)) ?? [];
-    if (!sourceMoves.length) {
-      return [];
-    }
-
-    const options = [];
-    const seen = new Set();
-
-    for (const first of sourceMoves) {
-      const singleKey = `${destinationKey(first.to)}|${sourceKey(first.from)}>${destinationKey(first.to)}:${first.dieUsed}`;
-      if (!seen.has(singleKey)) {
-        options.push({ to: first.to, moves: [first] });
-        seen.add(singleKey);
-      }
-
-      const afterFirst = applyMove(game, first);
-      if (afterFirst.currentPlayer !== game.currentPlayer || afterFirst.winner) {
-        continue;
-      }
-
-      const secondMoves = computeLegalMoves(afterFirst).filter((nextMove) => sourceKey(nextMove.from) === sourceKey(first.to));
-      for (const second of secondMoves) {
-        const chainKey = `${destinationKey(second.to)}|${sourceKey(first.from)}>${destinationKey(first.to)}:${first.dieUsed},${sourceKey(second.from)}>${destinationKey(second.to)}:${second.dieUsed}`;
-        if (seen.has(chainKey)) {
-          continue;
-        }
-        options.push({ to: second.to, moves: [first, second] });
-        seen.add(chainKey);
-      }
-    }
-
-    return options;
-  }, [activeSelectedSource, game, movesBySource]);
+    return sourceMoves;
+  }, [activeSelectedSource, movesBySource]);
 
   const destinationSet = useMemo(() => {
     if (isAnyRollAnimationRunning) {
       return new Set();
     }
     const set = new Set();
-    for (const option of moveOptionsForSelected) {
-      set.add(destinationKey(option.to));
+    for (const move of moveOptionsForSelected) {
+      set.add(destinationKey(move.to));
     }
     return set;
   }, [isAnyRollAnimationRunning, moveOptionsForSelected]);
@@ -940,25 +906,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     return next;
   }
 
-  function chooseMoveOptionForDestination(stateAtMove, candidates) {
-    if (candidates.length <= 1) {
-      return candidates[0] ?? null;
-    }
-
-    const maxSteps = Math.max(...candidates.map((c) => c.moves.length));
-    const longest = candidates.filter((c) => c.moves.length === maxSteps);
-    if (longest.length === 1) {
-      return longest[0];
-    }
-
-    if (maxSteps === 1) {
-      const bestSingle = chooseMoveForDestination(stateAtMove, longest.map((c) => c.moves[0]));
-      return longest.find((c) => moveMatches(c.moves[0], bestSingle)) ?? longest[0];
-    }
-
-    return longest[0];
-  }
-
   async function performMoveSequence(stateAtMove, moves) {
     if (isAnimatingMove) {
       return;
@@ -994,17 +941,17 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return;
     }
 
-    const candidates = moveOptionsForSelected.filter((option) => destinationKey(option.to) === destinationKey(destination));
+    const candidates = moveOptionsForSelected.filter((move) => destinationKey(move.to) === destinationKey(destination));
     if (!candidates.length) {
       return;
     }
 
-    const chosenOption = chooseMoveOptionForDestination(game, candidates);
-    if (!chosenOption) {
+    const chosenMove = chooseMoveForDestination(game, candidates);
+    if (!chosenMove) {
       return;
     }
 
-    void performMoveSequence(game, chosenOption.moves);
+    void performMoveSequence(game, [chosenMove]);
   }
 
   function handleNewGame() {
