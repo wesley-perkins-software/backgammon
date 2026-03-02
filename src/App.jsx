@@ -380,6 +380,15 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return [];
     }
     const sourceMoves = movesBySource.get(sourceKey(activeSelectedSource)) ?? [];
+    return sourceMoves.map((move) => ({ to: move.to, moves: [move], kind: 'single' }));
+  }, [activeSelectedSource, movesBySource]);
+
+  const chainOptionsForSelected = useMemo(() => {
+    if (activeSelectedSource == null) {
+      return [];
+    }
+
+    const sourceMoves = movesBySource.get(sourceKey(activeSelectedSource)) ?? [];
     if (!sourceMoves.length) {
       return [];
     }
@@ -387,25 +396,19 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     const options = [];
     const seen = new Set();
 
-    for (const first of sourceMoves) {
-      const singleKey = `${destinationKey(first.to)}|${sourceKey(first.from)}>${destinationKey(first.to)}:${first.dieUsed}`;
-      if (!seen.has(singleKey)) {
-        options.push({ to: first.to, moves: [first] });
-        seen.add(singleKey);
-      }
-
-      const afterFirst = applyMove(game, first);
+    for (const firstMove of sourceMoves) {
+      const afterFirst = applyMove(game, firstMove);
       if (afterFirst.currentPlayer !== game.currentPlayer || afterFirst.winner) {
         continue;
       }
 
-      const secondMoves = computeLegalMoves(afterFirst).filter((nextMove) => sourceKey(nextMove.from) === sourceKey(first.to));
-      for (const second of secondMoves) {
-        const chainKey = `${destinationKey(second.to)}|${sourceKey(first.from)}>${destinationKey(first.to)}:${first.dieUsed},${sourceKey(second.from)}>${destinationKey(second.to)}:${second.dieUsed}`;
+      const secondMoves = computeLegalMoves(afterFirst).filter((secondMove) => sourceKey(secondMove.from) === sourceKey(firstMove.to));
+      for (const secondMove of secondMoves) {
+        const chainKey = `${destinationKey(secondMove.to)}|${sourceKey(firstMove.from)}>${destinationKey(firstMove.to)}:${firstMove.dieUsed},${sourceKey(secondMove.from)}>${destinationKey(secondMove.to)}:${secondMove.dieUsed}`;
         if (seen.has(chainKey)) {
           continue;
         }
-        options.push({ to: second.to, moves: [first, second] });
+        options.push({ to: secondMove.to, moves: [firstMove, secondMove], kind: 'chain' });
         seen.add(chainKey);
       }
     }
@@ -418,11 +421,11 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return new Set();
     }
     const set = new Set();
-    for (const option of moveOptionsForSelected) {
+    for (const option of [...moveOptionsForSelected, ...chainOptionsForSelected]) {
       set.add(destinationKey(option.to));
     }
     return set;
-  }, [isAnyRollAnimationRunning, moveOptionsForSelected]);
+  }, [chainOptionsForSelected, isAnyRollAnimationRunning, moveOptionsForSelected]);
 
   const movableSourceSet = useMemo(() => {
     const set = new Set();
@@ -994,12 +997,21 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       return;
     }
 
-    const candidates = moveOptionsForSelected.filter((option) => destinationKey(option.to) === destinationKey(destination));
+    const singleCandidates = moveOptionsForSelected.filter((option) => destinationKey(option.to) === destinationKey(destination));
+    const chainCandidates = chainOptionsForSelected.filter((option) => destinationKey(option.to) === destinationKey(destination));
+
+    const candidates = [...singleCandidates, ...chainCandidates];
     if (!candidates.length) {
       return;
     }
 
-    const chosenOption = chooseMoveOptionForDestination(game, candidates);
+    let eligibleCandidates = candidates;
+    if (singleCandidates.length > 0 && chainCandidates.length > 0) {
+      // Preserve safety: do not auto-follow into a second move when destination is also a legal single move.
+      eligibleCandidates = singleCandidates;
+    }
+
+    const chosenOption = chooseMoveOptionForDestination(game, eligibleCandidates);
     if (!chosenOption) {
       return;
     }
