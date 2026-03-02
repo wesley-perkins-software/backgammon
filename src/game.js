@@ -77,9 +77,15 @@ export function createInitialState() {
     bar: { A: 0, B: 0 },
     bearOff: { A: 0, B: 0 },
     currentPlayer: PLAYER_A,
+    phase: 'opening',
     dice: { values: [], remaining: [] },
     winner: null,
     openingRollPending: true,
+    openingRoll: {
+      player: null,
+      computer: null,
+      status: 'idle'
+    },
     undoStack: [],
     statusText: 'Roll to determine who goes first.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
@@ -458,7 +464,7 @@ export function rollDice(state, forcedValues = null, options = {}) {
     return state;
   }
 
-  if (state.openingRollPending) {
+  if (state.phase === 'opening' || state.openingRollPending) {
     const openingRoll = {
       player: forcedValues?.[0] ?? rollDie1to6(),
       computer: forcedValues?.[1] ?? rollDie1to6()
@@ -467,7 +473,13 @@ export function rollDice(state, forcedValues = null, options = {}) {
     if (openingRoll.player === openingRoll.computer) {
       return {
         ...cloneState(state),
+        phase: 'opening',
         dice: { values: [], remaining: [] },
+        openingRoll: {
+          player: openingRoll.player,
+          computer: openingRoll.computer,
+          status: 'tie'
+        },
         statusText: `Opening roll tied at ${openingRoll.player}-${openingRoll.computer}. Roll again.`
       };
     }
@@ -485,7 +497,13 @@ export function rollDice(state, forcedValues = null, options = {}) {
     return {
       ...cloneState(state),
       currentPlayer: startingPlayer,
+      phase: 'playing',
       openingRollPending: false,
+      openingRoll: {
+        player: openingRoll.player,
+        computer: openingRoll.computer,
+        status: 'done'
+      },
       dice: {
         values: firstTurnDice,
         remaining
@@ -632,10 +650,20 @@ export function restoreState(raw) {
     }
 
     const base = createInitialState();
+    const normalizedPhase = parsed.phase === 'playing' || parsed.phase === 'opening'
+      ? parsed.phase
+      : (parsed.openingRollPending === false ? 'playing' : 'opening');
+    const parsedOpeningRoll = isPlainObject(parsed.openingRoll) ? parsed.openingRoll : {};
     return {
       ...base,
       ...parsed,
-      openingRollPending: typeof parsed.openingRollPending === 'boolean' ? parsed.openingRollPending : base.openingRollPending,
+      phase: normalizedPhase,
+      openingRollPending: normalizedPhase === 'opening',
+      openingRoll: {
+        player: Number.isInteger(parsedOpeningRoll.player) ? Math.min(6, Math.max(1, parsedOpeningRoll.player)) : null,
+        computer: Number.isInteger(parsedOpeningRoll.computer) ? Math.min(6, Math.max(1, parsedOpeningRoll.computer)) : null,
+        status: ['idle', 'rolling', 'tie', 'done'].includes(parsedOpeningRoll.status) ? parsedOpeningRoll.status : base.openingRoll.status
+      },
       statusText: typeof parsed.statusText === 'string' ? parsed.statusText : base.statusText,
       dev: isPlainObject(parsed.dev)
         ? {

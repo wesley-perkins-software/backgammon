@@ -29,7 +29,6 @@ const BOARD_DICE_ROLL_MS = 1000;
 const OPENING_ROLL_DIE_ANIM_MS = BOARD_DICE_ROLL_MS;
 const OPENING_ROLL_DIE_HOLD_MS = 220;
 const OPENING_ROLL_RESULT_MS = 800;
-const OPENING_ROLL_TIE_DELAY_MS = 600;
 const OPENING_ROLL_COMPUTER_START_BEAT_MS = 420;
 const COMPUTER_TURN_DELAY_MS = 1000;
 const DICE_USED_STYLE_DELAY_MS = 250;
@@ -316,12 +315,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
   const [isBoardDiceRolling, setIsBoardDiceRolling] = useState(false);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [movingChecker, setMovingChecker] = useState(null);
-  const [openingRoll, setOpeningRoll] = useState({
-    step: 'WAITING_FOR_PLAYER',
-    playerDie: null,
-    computerDie: null,
-    winner: null
-  });
   const [pendingRoll, setPendingRoll] = useState(null);
   const [isAnimatingRoll, setIsAnimatingRoll] = useState(false);
   const [disableUsedDiceStyling, setDisableUsedDiceStyling] = useState(false);
@@ -340,21 +333,19 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
   const suppressNextCommittedRollAnimationRef = useRef(false);
   const openingComputerStartBeatUntilRef = useRef(0);
   const isComputerTurn = game.currentPlayer === PLAYER_B;
-  const gamePhase = game.openingRollPending ? 'OPENING_ROLL' : 'TURN_PLAY';
-  const isOpeningRollSequenceRunning =
-    gamePhase === 'OPENING_ROLL' && (openingRoll.step === 'PLAYER_ROLLING' || openingRoll.step === 'COMPUTER_ROLLING' || openingRoll.step === 'DONE');
+  const gamePhase = game.phase === 'opening' ? 'OPENING_ROLL' : 'TURN_PLAY';
+  const isOpeningRollSequenceRunning = gamePhase === 'OPENING_ROLL' && game.openingRoll.status === 'rolling';
   const isAnyRollAnimationRunning = isBoardDiceRolling || isAnimatingRoll;
   const openingMessage = (() => {
     if (gamePhase !== 'OPENING_ROLL') {
       return game.statusText;
     }
-    if (openingRoll.step === 'PLAYER_ROLLING') return 'Opening roll — highest die goes first. You roll…';
-    if (openingRoll.step === 'COMPUTER_ROLLING') return 'Opening roll — highest die goes first. Computer rolls…';
-    if (openingRoll.step === 'DONE') {
-      if (openingRoll.winner === 'player') return 'Opening roll — highest die goes first. You go first.';
-      if (openingRoll.winner === 'computer') return 'Opening roll — highest die goes first. Computer goes first.';
-      return 'Opening roll — highest die goes first. Tie — roll again.';
+    if (game.openingRoll.status === 'rolling') {
+      return game.openingRoll.computer == null
+        ? 'Opening roll — highest die goes first. You roll…'
+        : 'Opening roll — highest die goes first. Computer rolls…';
     }
+    if (game.openingRoll.status === 'tie') return 'Opening roll — highest die goes first. Tie — roll again.';
     return 'Opening roll — highest die goes first.';
   })();
 
@@ -445,7 +436,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
   const canPlayerRoll =
     !game.winner &&
     !isAnyRollAnimationRunning &&
-    ((gamePhase === 'OPENING_ROLL' && openingRoll.step === 'WAITING_FOR_PLAYER') ||
+    ((gamePhase === 'OPENING_ROLL' && ['idle', 'tie'].includes(game.openingRoll.status)) ||
       (gamePhase === 'TURN_PLAY' && game.currentPlayer === PLAYER_A && playerTurnPhase === 'NEED_ROLL'));
 
   useEffect(() => {
@@ -603,7 +594,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     setGame((prev) => {
       if (
         prev.currentPlayer !== PLAYER_A ||
-        prev.openingRollPending ||
+        prev.phase === 'opening' ||
         (prev.dice.values.length === 0 && prev.dice.remaining.length === 0) ||
         prev.dice.remaining.length > 0
       ) {
@@ -620,7 +611,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
   }, [game, gamePhase, playerTurnPhase]);
 
   useEffect(() => {
-    if (game.winner || game.openingRollPending || !isComputerTurn) {
+    if (game.winner || game.phase === 'opening' || !isComputerTurn) {
       return undefined;
     }
     if (isAnimatingMove || isAnyRollAnimationRunning || computerTurnInFlightRef.current) {
@@ -758,7 +749,10 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     const playerDie = forced?.[0] ?? (rollDie1to6());
     const computerDie = forced?.[1] ?? (rollDie1to6());
 
-    setOpeningRoll({ step: 'PLAYER_ROLLING', playerDie, computerDie: null, winner: null });
+    setGame((prev) => ({
+      ...prev,
+      openingRoll: { player: playerDie, computer: null, status: 'rolling' }
+    }));
     setPendingRoll({ values: [playerDie], animatedMask: [true], owner: 'opening', id: openingRollId });
     setIsAnimatingRoll(true);
     setDiceAnimKey((k) => k + 2);
@@ -769,7 +763,10 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     await wait(OPENING_ROLL_DIE_HOLD_MS);
     if (didCancel()) return;
 
-    setOpeningRoll({ step: 'COMPUTER_ROLLING', playerDie, computerDie, winner: null });
+    setGame((prev) => ({
+      ...prev,
+      openingRoll: { player: playerDie, computer: computerDie, status: 'rolling' }
+    }));
     setPendingRoll({ values: [playerDie, computerDie], animatedMask: [false, true], owner: 'opening', id: openingRollId });
     setIsAnimatingRoll(true);
     setDiceAnimKey((k) => k + 2);
@@ -777,35 +774,22 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     if (didCancel()) return;
     setIsAnimatingRoll(false);
 
-    const winner = playerDie === computerDie ? 'tie' : playerDie > computerDie ? 'player' : 'computer';
-    setOpeningRoll({ step: 'DONE', playerDie, computerDie, winner });
     await wait(OPENING_ROLL_RESULT_MS);
     if (didCancel()) return;
     setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
 
-    if (winner === 'tie') {
-      await wait(OPENING_ROLL_TIE_DELAY_MS);
-      if (didCancel()) return;
-      setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
-      setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
-      if (!forced) {
-        void runOpeningRollSequence(null);
-      }
-      return;
-    }
-
-    setOpeningRoll({ step: 'DONE', playerDie, computerDie, winner });
-    suppressNextCommittedRollAnimationRef.current = true;
     setGame((prev) => {
-      if (prev.winner || !prev.openingRollPending || prev.dice.remaining.length > 0) {
+      if (prev.winner || prev.phase !== 'opening' || prev.dice.remaining.length > 0) {
         return prev;
       }
-      return pushUndoState(prev, rollDice(prev, [playerDie, computerDie]));
+      suppressNextCommittedRollAnimationRef.current = true;
+      const rolled = rollDice(prev, [playerDie, computerDie]);
+      if (rolled.phase === 'playing' && rolled.currentPlayer === PLAYER_B) {
+        openingComputerStartBeatUntilRef.current = Date.now() + OPENING_ROLL_COMPUTER_START_BEAT_MS;
+      }
+      return pushUndoState(prev, rolled);
     });
 
-    if (winner === 'computer') {
-      openingComputerStartBeatUntilRef.current = Date.now() + OPENING_ROLL_COMPUTER_START_BEAT_MS;
-    }
     setSelectedSource(null);
   }
 
@@ -833,7 +817,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       await wait(BOARD_DICE_ROLL_MS);
 
       setGame((prev) => {
-        if (prev.winner || prev.currentPlayer !== PLAYER_A || prev.openingRollPending || prev.dice.remaining.length > 0) {
+        if (prev.winner || prev.currentPlayer !== PLAYER_A || prev.phase === 'opening' || prev.dice.remaining.length > 0) {
           return prev;
         }
 
@@ -1034,7 +1018,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     const reset = createInitialState();
     commit(withUndo(reset));
     setSelectedSource(null);
@@ -1051,7 +1034,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     const reset = {
       ...createInitialState(),
       undoStack: game.undoStack,
@@ -1072,7 +1054,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     const previous = undo(game);
     commit(previous);
     setSelectedSource(null);
@@ -1089,7 +1070,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     setPendingRoll(null);
     setIsAnimatingRoll(false);
     setToastMessage(null);
-    setOpeningRoll({ step: 'WAITING_FOR_PLAYER', playerDie: null, computerDie: null, winner: null });
     window.localStorage.removeItem(STORAGE_KEY);
     commit(createInitialState());
     setSelectedSource(null);
