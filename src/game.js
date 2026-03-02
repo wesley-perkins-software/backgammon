@@ -459,25 +459,27 @@ export function rollDice(state, forcedValues = null, options = {}) {
   }
 
   if (state.openingRollPending) {
-    const openerA = forcedValues?.[0] ?? rollDie1to6();
-    const openerB = forcedValues?.[1] ?? rollDie1to6();
+    const openingRoll = {
+      player: forcedValues?.[0] ?? rollDie1to6(),
+      computer: forcedValues?.[1] ?? rollDie1to6()
+    };
 
-    if (openerA === openerB) {
+    if (openingRoll.player === openingRoll.computer) {
       return {
         ...cloneState(state),
         dice: { values: [], remaining: [] },
-        statusText: `Opening roll tied at ${openerA}-${openerB}. Roll again.`
+        statusText: `Opening roll tied at ${openingRoll.player}-${openingRoll.computer}. Roll again.`
       };
     }
 
-    const startingPlayer = openerA > openerB ? PLAYER_A : PLAYER_B;
+    const firstTurnDice = [openingRoll.player, openingRoll.computer];
+    const [d1, d2] = firstTurnDice;
+    const startingPlayer = openingRoll.player > openingRoll.computer ? PLAYER_A : PLAYER_B;
     const startText =
       startingPlayer === PLAYER_A
-        ? `You go first with ${openerA} and ${openerB}.`
-        : `Computer goes first with ${openerB} and ${openerA}.`;
+        ? `You go first with ${openingRoll.player} and ${openingRoll.computer}.`
+        : `Computer goes first with ${openingRoll.player} and ${openingRoll.computer}.`;
 
-    const openingValues = startingPlayer === PLAYER_A ? [openerA, openerB] : [openerB, openerA];
-    const [d1, d2] = openingValues;
     const remaining = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
 
     return {
@@ -485,7 +487,7 @@ export function rollDice(state, forcedValues = null, options = {}) {
       currentPlayer: startingPlayer,
       openingRollPending: false,
       dice: {
-        values: openingValues,
+        values: firstTurnDice,
         remaining
       },
       statusText: startText
