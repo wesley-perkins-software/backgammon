@@ -3,7 +3,7 @@ import {
   PLAYER_A,
   PLAYER_B,
   STORAGE_KEY,
-  applyMove,
+  applyMoveToState,
   chooseComputerMove,
   chooseMoveForDestination,
   calculatePipCount,
@@ -394,7 +394,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
         seen.add(singleKey);
       }
 
-      const afterFirst = applyMove(game, first);
+      const afterFirst = applyMoveToState(game, first);
       if (afterFirst.currentPlayer !== game.currentPlayer || afterFirst.winner) {
         continue;
       }
@@ -932,7 +932,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
   function applyMoveSequence(stateAtMove, moves) {
     let next = stateAtMove;
     for (const move of moves) {
-      next = applyMove(next, move);
+      next = applyMoveToState(next, move);
       if (next.currentPlayer !== stateAtMove.currentPlayer || next.winner) {
         break;
       }
@@ -971,7 +971,7 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
         let animationState = stateAtMove;
         for (const move of moves) {
           await animateSingleMove(animationState, move);
-          animationState = applyMove(animationState, move);
+          animationState = applyMoveToState(animationState, move);
           if (animationState.currentPlayer !== stateAtMove.currentPlayer || animationState.winner) {
             break;
           }
