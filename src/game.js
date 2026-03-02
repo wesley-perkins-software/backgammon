@@ -319,6 +319,20 @@ export function computeLegalMoves(state) {
   return firstMoves;
 }
 
+export function hasLegalMoves(dice, boardState, player = boardState?.currentPlayer) {
+  if (!Array.isArray(dice) || dice.length === 0 || boardState?.winner || !player) {
+    return false;
+  }
+  return computeLegalMoves({
+    ...boardState,
+    currentPlayer: player,
+    dice: {
+      ...boardState.dice,
+      remaining: [...dice]
+    }
+  }).length > 0;
+}
+
 function maxPlayableMoves(state) {
   if (state.dice.remaining.length === 0 || state.winner) {
     return 0;
@@ -443,19 +457,45 @@ export function chooseComputerMove(state, legalMoves = null) {
   return best;
 }
 
+export function resolveMove(state, move) {
+  const nextState = applyMoveInternal(state, move);
+
+  if (nextState.winner) {
+    return {
+      nextBoard: {
+        points: [...nextState.points],
+        bar: { ...nextState.bar },
+        bearOff: { ...nextState.bearOff }
+      },
+      nextRemainingDice: [...nextState.dice.remaining],
+      didEndTurn: false,
+      nextState: withStatus(nextState, `${playerLabel(nextState.currentPlayer)} wins.`)
+    };
+  }
+
+  const nextRemainingDice = [...nextState.dice.remaining];
+  const didEndTurn =
+    nextRemainingDice.length === 0 ||
+    !hasLegalMoves(nextRemainingDice, nextState, state.currentPlayer);
+
+  return {
+    nextBoard: {
+      points: [...nextState.points],
+      bar: { ...nextState.bar },
+      bearOff: { ...nextState.bearOff }
+    },
+    nextRemainingDice,
+    didEndTurn,
+    nextState: didEndTurn ? endTurn(nextState) : nextState
+  };
+}
+
 export function applyMove(state, move) {
-  let next = applyMoveInternal(state, move);
+  return resolveMove(state, move);
+}
 
-  if (next.winner) {
-    return withStatus(next, `${playerLabel(next.currentPlayer)} wins.`);
-  }
-
-  const remainingLegal = computeLegalMoves(next);
-  if (next.dice.remaining.length === 0 || remainingLegal.length === 0) {
-    next = endTurn(next);
-  }
-
-  return next;
+export function applyMoveToState(state, move) {
+  return resolveMove(state, move).nextState;
 }
 
 export function rollDice(state, forcedValues = null, options = {}) {
