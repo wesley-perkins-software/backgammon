@@ -319,6 +319,19 @@ export function computeLegalMoves(state) {
   return firstMoves;
 }
 
+export function hasLegalMoves(dice, boardState) {
+  if (!Array.isArray(dice) || dice.length === 0 || boardState?.winner) {
+    return false;
+  }
+  return computeLegalMoves({
+    ...boardState,
+    dice: {
+      ...boardState.dice,
+      remaining: [...dice]
+    }
+  }).length > 0;
+}
+
 function maxPlayableMoves(state) {
   if (state.dice.remaining.length === 0 || state.winner) {
     return 0;
@@ -450,8 +463,7 @@ export function applyMove(state, move) {
     return withStatus(next, `${playerLabel(next.currentPlayer)} wins.`);
   }
 
-  const remainingLegal = computeLegalMoves(next);
-  if (next.dice.remaining.length === 0 || remainingLegal.length === 0) {
+  if (next.dice.remaining.length === 0 || !hasLegalMoves(next.dice.remaining, next)) {
     next = endTurn(next);
   }
 
