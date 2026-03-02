@@ -18,6 +18,7 @@ import {
 } from './game.js';
 import SEO from './components/SEO.jsx';
 import { rollDie1to6 } from './random.js';
+import { buildPathForMove, performMoveSequence as runMoveSequence } from './moveSequence.js';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
 const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
@@ -876,39 +877,9 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     return pointRefs.current.get(location) ?? null;
   }
 
-  function pathForMove(stateAtMove, move) {
-    const path = [move.from];
-    const player = stateAtMove.currentPlayer;
-
-    if (typeof move.from === 'number' && typeof move.to === 'number') {
-      const dir = move.to > move.from ? 1 : -1;
-      for (let p = move.from + dir; p !== move.to + dir; p += dir) {
-        path.push(p);
-      }
-      return path;
-    }
-
-    if (typeof move.from === 'number' && move.to === 'off') {
-      const dir = player === PLAYER_A ? -1 : 1;
-      for (let step = 1; step <= move.dieUsed; step += 1) {
-        const point = move.from + dir * step;
-        if (point < 0 || point > 23) {
-          path.push('off');
-          return path;
-        }
-        path.push(point);
-      }
-      path.push('off');
-      return path;
-    }
-
-    path.push(move.to);
-    return path;
-  }
-
   async function animateSingleMove(stateAtMove, move) {
     const player = stateAtMove.currentPlayer;
-    const path = pathForMove(stateAtMove, move);
+    const path = buildPathForMove(stateAtMove, move);
     const centers = path
       .map((location) => {
         const element = elementForLocation(location, player);
@@ -927,17 +898,6 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
       await wait(MOVE_STEP_MS);
     }
     await wait(30);
-  }
-
-  function applyMoveSequence(stateAtMove, moves) {
-    let next = stateAtMove;
-    for (const move of moves) {
-      next = applyMove(next, move);
-      if (next.currentPlayer !== stateAtMove.currentPlayer || next.winner) {
-        break;
-      }
-    }
-    return next;
   }
 
   function chooseMoveOptionForDestination(stateAtMove, candidates) {
@@ -967,26 +927,21 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setIsAnimatingMove(true);
     try {
-      if (!prefersReducedMotion) {
-        let animationState = stateAtMove;
-        for (const move of moves) {
-          await animateSingleMove(animationState, move);
-          animationState = applyMove(animationState, move);
-          if (animationState.currentPlayer !== stateAtMove.currentPlayer || animationState.winner) {
-            break;
-          }
+      const next = await runMoveSequence(stateAtMove, moves, {
+        prefersReducedMotion,
+        animateSingleMove,
+        applyMoveFn: applyMove
+      });
+      setGame((prev) => {
+        if (prev !== stateAtMove) {
+          return prev;
         }
-      }
+        return pushUndoState(prev, next);
+      });
     } finally {
       setMovingChecker(null);
       setIsAnimatingMove(false);
     }
-    setGame((prev) => {
-      if (prev !== stateAtMove) {
-        return prev;
-      }
-      return pushUndoState(prev, applyMoveSequence(prev, moves));
-    });
   }
 
   function moveToDestination(destination) {
