@@ -13,7 +13,10 @@ import {
   rollDice,
   undo
 } from '../game.js';
-import { rollDie1to6 } from '../random.js';
+import * as defaultClock from '../platform/clock.js';
+import * as defaultMedia from '../platform/media.js';
+import * as defaultRandom from '../platform/random.js';
+import * as defaultStorage from '../platform/storage.js';
 import { clearSavedGameState, loadGameState, saveGameState } from '../services/persistence.js';
 
 const MOVE_STEP_MS = 210;
@@ -26,12 +29,11 @@ const OPENING_ROLL_COMPUTER_START_BEAT_MS = 420;
 const COMPUTER_TURN_DELAY_MS = 1000;
 const DICE_USED_STYLE_DELAY_MS = 250;
 
-const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const destinationKey = (to) => (to === 'off' ? 'off' : String(to));
 const sourceKey = (from) => (from === 'bar' ? 'bar' : String(from));
 
-export default function useGameController() {
-  const [game, setGame] = useState(loadGameState);
+export default function useGameController({ clock = defaultClock, media = defaultMedia, random = defaultRandom, storage = defaultStorage } = {}) {
+  const [game, setGame] = useState(() => loadGameState(storage));
   const [selectedSource, setSelectedSource] = useState(null);
   const [diceAnimKey, setDiceAnimKey] = useState(0);
   const [isBoardDiceRolling, setIsBoardDiceRolling] = useState(false);
@@ -119,7 +121,7 @@ export default function useGameController() {
   const showMovableSources = !isAnyRollAnimationRunning && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
   const canPlayerRoll = !game.winner && !isAnyRollAnimationRunning && ((gamePhase === 'OPENING_ROLL' && ['idle', 'tie'].includes(game.openingRoll.status)) || (gamePhase === 'TURN_PLAY' && game.currentPlayer === PLAYER_A && playerTurnPhase === 'NEED_ROLL'));
 
-  useEffect(() => { saveGameState(game); }, [game]);
+  useEffect(() => { saveGameState(game, storage); }, [game, storage]);
   useEffect(() => { if (selectedSource != null && !movesBySource.has(sourceKey(selectedSource))) setSelectedSource(null); }, [movesBySource, selectedSource]);
 
   const diceSignature = game.dice.values.join('-');
@@ -129,7 +131,7 @@ export default function useGameController() {
       setIsBoardDiceRolling(false);
       return;
     }
-    if (boardDiceRollTimerRef.current) window.clearTimeout(boardDiceRollTimerRef.current);
+    if (boardDiceRollTimerRef.current) clock.clearTimeout(boardDiceRollTimerRef.current);
     if (game.dice.values.length === 2) {
       if (suppressNextCommittedRollAnimationRef.current) {
         suppressNextCommittedRollAnimationRef.current = false;
@@ -138,24 +140,24 @@ export default function useGameController() {
       }
       setIsBoardDiceRolling(true);
       setDiceAnimKey((k) => k + 2);
-      boardDiceRollTimerRef.current = window.setTimeout(() => { setIsBoardDiceRolling(false); boardDiceRollTimerRef.current = null; }, BOARD_DICE_ROLL_MS);
+      boardDiceRollTimerRef.current = clock.setTimeout(() => { setIsBoardDiceRolling(false); boardDiceRollTimerRef.current = null; }, BOARD_DICE_ROLL_MS);
       return;
     }
     setIsBoardDiceRolling(false);
   }, [diceSignature, game.dice.values.length]);
 
   useEffect(() => () => {
-    if (boardDiceRollTimerRef.current) window.clearTimeout(boardDiceRollTimerRef.current);
-    if (usedDiceStylingTimerRef.current) window.clearTimeout(usedDiceStylingTimerRef.current);
+    if (boardDiceRollTimerRef.current) clock.clearTimeout(boardDiceRollTimerRef.current);
+    if (usedDiceStylingTimerRef.current) clock.clearTimeout(usedDiceStylingTimerRef.current);
   }, []);
 
   useEffect(() => {
-    if (usedDiceStylingTimerRef.current) window.clearTimeout(usedDiceStylingTimerRef.current);
+    if (usedDiceStylingTimerRef.current) clock.clearTimeout(usedDiceStylingTimerRef.current);
     if (isAnyRollAnimationRunning) {
       setDisableUsedDiceStyling(true);
       return;
     }
-    usedDiceStylingTimerRef.current = window.setTimeout(() => { setDisableUsedDiceStyling(false); usedDiceStylingTimerRef.current = null; }, DICE_USED_STYLE_DELAY_MS);
+    usedDiceStylingTimerRef.current = clock.setTimeout(() => { setDisableUsedDiceStyling(false); usedDiceStylingTimerRef.current = null; }, DICE_USED_STYLE_DELAY_MS);
   }, [isAnyRollAnimationRunning]);
 
   useEffect(() => {
@@ -170,12 +172,12 @@ export default function useGameController() {
   useEffect(() => {
     if (gamePhase === 'OPENING_ROLL' || game.winner || game.currentPlayer !== PLAYER_A || playerTurnPhase !== 'NO_MOVES') return;
     setToastMessage('No legal moves — passing turn.');
-    const timer = window.setTimeout(() => {
+    const timer = clock.setTimeout(() => {
       setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_A || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 || computeLegalMoves(prev).length !== 0 ? prev : pushUndoState(prev, endTurn(prev, `Player rolled ${prev.dice.values[0]} and ${prev.dice.values[1]} but has no legal moves. Turn passed.`)));
       setToastMessage(null);
       setPlayerTurnPhase('NEED_ROLL');
     }, 900);
-    return () => window.clearTimeout(timer);
+    return () => clock.clearTimeout(timer);
   }, [game, gamePhase, playerTurnPhase]);
 
   useEffect(() => {
@@ -229,17 +231,17 @@ export default function useGameController() {
     const centers = pathForMove(stateAtMove, move).map((loc) => centerFromElement(elementForLocation(loc, player))).filter(Boolean);
     if (centers.length < 2) return;
     setMovingChecker({ player, x: centers[0].x, y: centers[0].y });
-    await wait(MOVE_START_DELAY_MS);
+    await clock.wait(MOVE_START_DELAY_MS);
     for (let i = 1; i < centers.length; i += 1) {
       setMovingChecker((prev) => (prev ? { ...prev, x: centers[i].x, y: centers[i].y } : prev));
-      await wait(MOVE_STEP_MS);
+      await clock.wait(MOVE_STEP_MS);
     }
-    await wait(30);
+    await clock.wait(30);
   }
   async function performMoveSequence(stateAtMove, moves) {
     if (isAnimatingMove) return;
     setSelectedSource(null);
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion = media.prefersReducedMotion();
     setIsAnimatingMove(true);
     try {
       if (!prefersReducedMotion) {
@@ -303,7 +305,7 @@ export default function useGameController() {
   function clearSavedGame() {
     if (isAnimatingMove) return;
     resetFlowState();
-    clearSavedGameState();
+    clearSavedGameState(storage);
     setGame(createInitialState());
   }
   function updateDebugDie(key, value) {
@@ -329,17 +331,17 @@ export default function useGameController() {
       setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
       return true;
     };
-    const playerDie = forced?.[0] ?? rollDie1to6();
-    const computerDie = forced?.[1] ?? rollDie1to6();
+    const playerDie = forced?.[0] ?? random.rollDie1to6();
+    const computerDie = forced?.[1] ?? random.rollDie1to6();
 
     setGame((prev) => ({ ...prev, openingRoll: { player: playerDie, computer: null, status: 'rolling' } }));
     setPendingRoll({ values: [playerDie], animatedMask: [true], owner: 'opening', id: openingRollId });
-    setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); await wait(OPENING_ROLL_DIE_ANIM_MS); if (didCancel()) return; setIsAnimatingRoll(false);
-    await wait(OPENING_ROLL_DIE_HOLD_MS); if (didCancel()) return;
+    setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); await clock.wait(OPENING_ROLL_DIE_ANIM_MS); if (didCancel()) return; setIsAnimatingRoll(false);
+    await clock.wait(OPENING_ROLL_DIE_HOLD_MS); if (didCancel()) return;
     setGame((prev) => ({ ...prev, openingRoll: { player: playerDie, computer: computerDie, status: 'rolling' } }));
     setPendingRoll({ values: [playerDie, computerDie], animatedMask: [false, true], owner: 'opening', id: openingRollId });
-    setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); await wait(OPENING_ROLL_DIE_ANIM_MS); if (didCancel()) return; setIsAnimatingRoll(false);
-    await wait(OPENING_ROLL_RESULT_MS); if (didCancel()) return;
+    setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); await clock.wait(OPENING_ROLL_DIE_ANIM_MS); if (didCancel()) return; setIsAnimatingRoll(false);
+    await clock.wait(OPENING_ROLL_RESULT_MS); if (didCancel()) return;
     setPendingRoll((prev) => (prev?.id === openingRollId ? null : prev));
     setGame((prev) => {
       if (prev.winner || prev.phase !== 'opening' || prev.dice.remaining.length > 0) return prev;
@@ -354,14 +356,14 @@ export default function useGameController() {
   function handleRoll(forced = null) {
     if ((!forced && !canPlayerRoll) || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) return;
     if (gamePhase === 'OPENING_ROLL') return void runOpeningRollSequence(forced);
-    const d1 = forced?.[0] ?? rollDie1to6();
-    const d2 = forced?.[1] ?? rollDie1to6();
+    const d1 = forced?.[0] ?? random.rollDie1to6();
+    const d2 = forced?.[1] ?? random.rollDie1to6();
     const rollId = globalThis.crypto?.randomUUID?.() ?? `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     void (async () => {
       setPlayerTurnPhase('ROLLING');
       setPendingRoll({ values: [d1, d2], animatedMask: [true, true], owner: 'player', id: rollId });
       setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); setSelectedSource(null);
-      await wait(BOARD_DICE_ROLL_MS);
+      await clock.wait(BOARD_DICE_ROLL_MS);
       setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_A || prev.phase === 'opening' || prev.dice.remaining.length > 0 ? prev : pushUndoState(prev, rollDice(prev, [d1, d2], { autoPassNoMoves: false })));
       suppressNextCommittedRollAnimationRef.current = true;
       setPendingRoll((prev) => (prev?.id === rollId ? null : prev));
@@ -374,7 +376,7 @@ export default function useGameController() {
     let computerDelay = COMPUTER_TURN_DELAY_MS;
     const now = Date.now();
     if (openingComputerStartBeatUntilRef.current > now) computerDelay = openingComputerStartBeatUntilRef.current - now;
-    const timer = window.setTimeout(() => {
+    const timer = clock.setTimeout(() => {
       if (computerTurnInFlightRef.current) return;
       if (game.dice.values.length === 2 && game.dice.remaining.length === 0 && computeLegalMoves(game).length === 0) {
         const [rolledA, rolledB] = game.dice.values;
@@ -385,11 +387,11 @@ export default function useGameController() {
         computerTurnInFlightRef.current = true;
         const sequenceId = computerTurnSequenceIdRef.current + 1;
         computerTurnSequenceIdRef.current = sequenceId;
-        const d1 = rollDie1to6(); const d2 = rollDie1to6();
+        const d1 = random.rollDie1to6(); const d2 = random.rollDie1to6();
         void (async () => {
           const rollId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
           setPendingRoll({ values: [d1, d2], animatedMask: [true, true], owner: 'computer', id: rollId });
-          setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); await wait(BOARD_DICE_ROLL_MS);
+          setIsAnimatingRoll(true); setDiceAnimKey((k) => k + 2); await clock.wait(BOARD_DICE_ROLL_MS);
           if (computerTurnSequenceIdRef.current !== sequenceId) return;
           let committed = null;
           setGame((prev) => {
@@ -401,7 +403,7 @@ export default function useGameController() {
           setPendingRoll((prev) => (prev?.id === rollId ? null : prev)); setIsAnimatingRoll(false);
           if (computerTurnSequenceIdRef.current !== sequenceId || !committed) return;
           if (computeLegalMoves(committed).length === 0) {
-            setToastMessage(`Computer rolled ${d1} and ${d2} — no legal moves.`); await wait(700);
+            setToastMessage(`Computer rolled ${d1} and ${d2} — no legal moves.`); await clock.wait(700);
             if (computerTurnSequenceIdRef.current !== sequenceId) return;
             setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_B ? prev : pushUndoState(prev, endTurn(prev, `Computer rolled ${d1} and ${d2} but has no legal moves. Turn passed.`)));
             setToastMessage(null);
@@ -415,7 +417,7 @@ export default function useGameController() {
       const aiMove = aiLegalMoves.length ? chooseComputerMove(game, aiLegalMoves) : null;
       if (aiMove) void performMoveSequence(game, [aiMove]);
     }, computerDelay);
-    return () => window.clearTimeout(timer);
+    return () => clock.clearTimeout(timer);
   }, [game, isComputerTurn, isAnimatingMove, isAnyRollAnimationRunning]);
 
   return {
