@@ -66,6 +66,28 @@ function buildChainClickScenario() {
   };
 }
 
+function buildDoubleOnesChainScenario() {
+  const points = Array(24).fill(0);
+  // Source checker at point 8. With 1-1-1-1 it can continue to points 7, 6, 5, and 4.
+  points[7] = 1;
+
+  return {
+    version: SCHEMA_VERSION,
+    points,
+    bar: { A: 0, B: 0 },
+    bearOff: { A: 0, B: 0 },
+    currentPlayer: PLAYER_A,
+    phase: 'playing',
+    dice: { values: [1, 1], remaining: [1, 1, 1, 1] },
+    winner: null,
+    openingRollPending: false,
+    openingRoll: { player: 6, computer: 1, status: 'done' },
+    undoStack: [],
+    statusText: 'Player rolled 1 and 1.',
+    dev: { debugOpen: false, dieA: 1, dieB: 1 }
+  };
+}
+
 function seedState(state) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -172,5 +194,42 @@ describe('App move selection', () => {
 
     applyMoveSpy.mockRestore();
     vi.useRealTimers();
+  });
+
+  it('highlights deep chained destinations for doubles and applies all chained moves on click', async () => {
+    seedState(buildDoubleOnesChainScenario());
+    const applyMoveSpy = vi.spyOn(gameModule, 'applyMove');
+    const user = userEvent.setup();
+    render(<App showSeo={false} showHeader={false} />);
+
+    const source = screen.getByRole('button', { name: 'Point 8' });
+    const plusOne = screen.getByRole('button', { name: 'Point 7' });
+    const plusTwo = screen.getByRole('button', { name: 'Point 6' });
+    const plusThree = screen.getByRole('button', { name: 'Point 5' });
+    const plusFour = screen.getByRole('button', { name: 'Point 4' });
+
+    await user.click(source);
+
+    expect(plusOne).toHaveClass('legal');
+    expect(plusTwo).toHaveClass('legal');
+    expect(plusThree).toHaveClass('legal');
+    expect(plusFour).toHaveClass('legal');
+
+    await user.click(plusFour);
+
+    await waitFor(() => {
+      expect(source.querySelectorAll('.checker-a')).toHaveLength(0);
+      expect(plusFour.querySelectorAll('.checker-a')).toHaveLength(1);
+    });
+
+    expect(applyMoveSpy).toHaveBeenCalledTimes(4);
+    expect(applyMoveSpy.mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({ from: 7, to: 6, dieUsed: 1 }),
+      expect.objectContaining({ from: 6, to: 5, dieUsed: 1 }),
+      expect.objectContaining({ from: 5, to: 4, dieUsed: 1 }),
+      expect.objectContaining({ from: 4, to: 3, dieUsed: 1 })
+    ]);
+
+    applyMoveSpy.mockRestore();
   });
 });
