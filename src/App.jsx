@@ -385,22 +385,35 @@ export default function App({ showSeo = true, seoPath = "/play", seoTitle = "Pla
     }
 
     const options = [];
+    const canContinueTurn = (nextState) => nextState.currentPlayer === game.currentPlayer && !nextState.winner;
+
     for (const firstMove of moveOptionsForSelected) {
       const afterFirst = applyMove(game, firstMove);
-      if (afterFirst.currentPlayer !== game.currentPlayer || afterFirst.winner) {
+      if (!canContinueTurn(afterFirst)) {
         continue;
       }
 
-      const secondMoves = computeLegalMoves(afterFirst);
-      for (const secondMove of secondMoves) {
-        if (destinationKey(secondMove.from) !== destinationKey(firstMove.to)) {
+      const stack = [{ state: afterFirst, sequence: [firstMove] }];
+      while (stack.length > 0) {
+        const current = stack.pop();
+        if (!current) {
           continue;
         }
-        options.push({
-          to: secondMove.to,
-          moves: [firstMove, secondMove],
-          kind: 'chain'
-        });
+
+        const lastMove = current.sequence[current.sequence.length - 1];
+        const nextMoves = computeLegalMoves(current.state).filter(
+          (nextMove) => destinationKey(nextMove.from) === destinationKey(lastMove.to)
+        );
+
+        for (const nextMove of nextMoves) {
+          const nextSequence = [...current.sequence, nextMove];
+          options.push({ to: nextMove.to, moves: nextSequence, kind: 'chain' });
+
+          const afterNext = applyMove(current.state, nextMove);
+          if (canContinueTurn(afterNext)) {
+            stack.push({ state: afterNext, sequence: nextSequence });
+          }
+        }
       }
     }
 
