@@ -3,9 +3,19 @@ import BoardSurface from './components/board/BoardSurface.jsx';
 import ControlsPanel from './components/board/ControlsPanel.jsx';
 import DebugPanel from './components/board/DebugPanel.jsx';
 import useGameController from './hooks/useGameController.js';
+import * as defaultClock from './platform/clock.js';
+import * as defaultMedia from './platform/media.js';
+import * as defaultRandom from './platform/random.js';
+import * as defaultStorage from './platform/storage.js';
 
-export default function App({ showSeo = true, seoPath = '/play', seoTitle = 'Play Backgammon Online Locally', seoDescription = 'Play Backgammon Local against the computer with automatic local save and beginner-friendly controls.', showHeader = true, className = '' }) {
-  const controller = useGameController();
+export default function App({ showSeo = true, seoPath = '/play', seoTitle = 'Play Backgammon Online Locally', seoDescription = 'Play Backgammon Local against the computer with automatic local save and beginner-friendly controls.', showHeader = true, className = '', adapters = {} }) {
+  const {
+    clock = defaultClock,
+    media = defaultMedia,
+    random = defaultRandom,
+    storage = defaultStorage
+  } = adapters;
+  const controller = useGameController({ clock, media, random, storage });
 
   return (
     <section className={`app ${className}`.trim()} aria-label="Backgammon game">
