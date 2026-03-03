@@ -8,6 +8,45 @@ import {
   opponent
 } from './engine.js';
 
+export const DEFAULT_AI_WEIGHTS = {
+  hitBonus: 35,
+  bearOffBonus: 60,
+  madePointBonus: 16,
+  breakMadePointPenalty: 14,
+  vulnerableBlotPenalty: 10,
+  dieUsedBonus: 1,
+  futureMoveMultiplier: 2
+};
+
+export const AI_STRATEGY_PROFILES = {
+  balanced: DEFAULT_AI_WEIGHTS,
+  aggressive: {
+    ...DEFAULT_AI_WEIGHTS,
+    hitBonus: 45,
+    vulnerableBlotPenalty: 8
+  }
+};
+
+function resolveAiWeights(strategyConfig = null) {
+  if (typeof strategyConfig === 'string') {
+    return AI_STRATEGY_PROFILES[strategyConfig] ?? DEFAULT_AI_WEIGHTS;
+  }
+
+  if (strategyConfig?.profile && AI_STRATEGY_PROFILES[strategyConfig.profile]) {
+    return AI_STRATEGY_PROFILES[strategyConfig.profile];
+  }
+
+  if (strategyConfig?.weights) {
+    return { ...DEFAULT_AI_WEIGHTS, ...strategyConfig.weights };
+  }
+
+  if (strategyConfig) {
+    return { ...DEFAULT_AI_WEIGHTS, ...strategyConfig };
+  }
+
+  return AI_STRATEGY_PROFILES.balanced;
+}
+
 export function chooseMoveForDestination(state, candidateMoves) {
   if (candidateMoves.length <= 1) {
     return candidateMoves[0] ?? null;
@@ -59,49 +98,51 @@ export function destinationIsVulnerableAfterMove(state, move, player) {
   return false;
 }
 
-export function scoreMove(state, move) {
+export function scoreMove(state, move, weights = DEFAULT_AI_WEIGHTS) {
   const player = state.currentPlayer;
   let score = 0;
 
   if (move.hit) {
-    score += 35;
+    score += weights.hitBonus;
   }
   if (move.to === 'off') {
-    score += 60;
+    score += weights.bearOffBonus;
   }
 
   const beforeToCount = move.to === 'off' ? 0 : countAt(state.points, move.to, player);
   const beforeFromCount = move.from === 'bar' ? 0 : countAt(state.points, move.from, player);
 
   if (move.to !== 'off' && beforeToCount >= 1) {
-    score += 16;
+    score += weights.madePointBonus;
   }
   if (move.from !== 'bar' && beforeFromCount === 2) {
-    score -= 14;
+    score -= weights.breakMadePointPenalty;
   }
   if (destinationIsVulnerableAfterMove(state, move, player)) {
-    score -= 10;
+    score -= weights.vulnerableBlotPenalty;
   }
 
-  score += move.dieUsed;
+  score += move.dieUsed * weights.dieUsedBonus;
   return score;
 }
 
-export function chooseComputerMove(state, legalMoves = null) {
+export function chooseComputerMove(state, legalMoves = null, strategyConfig = null) {
   const moves = legalMoves ?? computeLegalMoves(state);
   if (!moves.length) {
     return null;
   }
+
+  const weights = resolveAiWeights(strategyConfig);
 
   let best = moves[0];
   let bestScore = Number.NEGATIVE_INFINITY;
   let bestFuture = -1;
 
   for (const move of moves) {
-    const localScore = scoreMove(state, move);
+    const localScore = scoreMove(state, move, weights);
     const nextState = applyMoveInternal(state, move);
     const future = maxPlayableMoves(nextState);
-    const total = localScore + future * 2;
+    const total = localScore + future * weights.futureMoveMultiplier;
 
     if (total > bestScore) {
       best = move;
