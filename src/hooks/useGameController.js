@@ -337,13 +337,6 @@ export default function useGameController({ clock = defaultClock, media = defaul
   }
 
 
-  function choosePathOption(optionId) {
-    if (!pendingPathChoices) return;
-    const promptOption = pendingPathChoices.options.find((option) => option.id === optionId);
-    if (!promptOption) return;
-    setPendingPathChoices(null);
-    void performMoveSequence(game, promptOption.option.steps);
-  }
 
   function cancelPendingPathChoice() {
     setPendingPathChoices(null);
@@ -501,7 +494,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
     pendingPathChoices,
     boardStageRef, pointRefs, barRef, bearOffRefs,
-    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, choosePathOption, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
+    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie
   };
 }

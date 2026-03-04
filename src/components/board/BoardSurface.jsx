@@ -112,7 +112,7 @@ export default function BoardSurface(props) {
     isComputerTurn, activeSelectedSource, destinationSet, movableSourceSet, showMovableSources,
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
-    pendingPathChoices, chooseIntermediatePath, choosePathOption, cancelPendingPathChoice
+    pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice
   } = props;
 
   const pathPromptRef = useRef(null);
@@ -136,7 +136,7 @@ export default function BoardSurface(props) {
   }} />;
 
   return (
-    <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board" onClick={(event) => {
+    <section ref={boardStageRef} className={`board-stage ${pendingPathChoices ? 'pending-path-choice' : ''}`.trim()} aria-label="Backgammon board" onClick={(event) => {
       if (!pendingPathChoices) return;
       if (event.target.closest('.path-choice-prompt')) return;
       if (event.target.closest('.point.legal, .bearoff-tray.legal')) return;
@@ -152,20 +152,7 @@ export default function BoardSurface(props) {
           tabIndex={-1}
           ref={pathPromptRef}
         >
-          <p>Choose your path</p>
-          <small>Which blot do you want to hit?</small>
-          <div className="path-choice-options">
-            {pendingPathChoices.options.map((choice) => (
-              <button
-                key={choice.id}
-                type="button"
-                className="path-choice-option"
-                onClick={() => choosePathOption(choice.id)}
-              >
-                {choice.label}
-              </button>
-            ))}
-          </div>
+          <p>Choose intermediate step</p>
         </section>
       )}
       <div className="game-layout">

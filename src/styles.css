@@ -715,21 +715,15 @@ button:focus-visible {
   opacity: 0.86;
 }
 
-.path-choice-options {
-  margin-top: 0.35rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
 
-.path-choice-option {
-  font: inherit;
-  color: inherit;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 209, 102, 0.5);
-  border-radius: 0.35rem;
-  padding: 0.2rem 0.35rem;
-  text-align: left;
+
+.board-stage.pending-path-choice .point.legal,
+.board-stage.pending-path-choice .point.is-legal,
+.board-stage.pending-path-choice .bearoff-tray.legal,
+.board-stage.pending-path-choice .bearoff-tray.is-legal {
+  box-shadow:
+    0 0 0 2px rgba(92, 214, 127, 0.95) inset,
+    0 0 12px 0 rgba(92, 214, 127, 0.35);
 }
 
 .point.selected .checker-stack,
