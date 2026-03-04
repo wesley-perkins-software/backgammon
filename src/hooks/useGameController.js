@@ -4,7 +4,6 @@ import {
   PLAYER_B,
   applyMove,
   chooseComputerMove,
-  chooseMoveForDestination,
   calculatePipCount,
   computeLegalMoves,
   createInitialState,
@@ -18,6 +17,11 @@ import * as defaultMedia from '../platform/media.js';
 import * as defaultRandom from '../platform/random.js';
 import * as defaultStorage from '../platform/storage.js';
 import { clearSavedGameState, loadGameState, saveGameState } from '../services/persistence.js';
+import {
+  analyzePathChoices,
+  buildMoveSequenceOption,
+  findDeterministicChoice
+} from './movePathChoice.js';
 
 const MOVE_STEP_MS = 210;
 const MOVE_START_DELAY_MS = 40;
@@ -44,6 +48,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   const [disableUsedDiceStyling, setDisableUsedDiceStyling] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [playerTurnPhase, setPlayerTurnPhase] = useState('NEED_ROLL');
+  const [pendingPathChoices, setPendingPathChoices] = useState(null);
 
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
@@ -111,11 +116,28 @@ export default function useGameController({ clock = defaultClock, media = defaul
     return options;
   }, [activeSelectedSource, game, moveOptionsForSelected]);
 
-  const destinationOptionsForSelected = useMemo(() => [...moveOptionsForSelected.map((move) => ({ to: move.to, moves: [move], kind: 'single' })), ...chainOptionsForSelected], [moveOptionsForSelected, chainOptionsForSelected]);
+  const destinationOptionsForSelected = useMemo(() => {
+    const singleOptions = moveOptionsForSelected.map((move) => buildMoveSequenceOption({
+      from: move.from,
+      to: move.to,
+      kind: 'single',
+      steps: [move],
+      resultingGame: applyMoveSequence(game, [move])
+    }));
+    const chainOptions = chainOptionsForSelected.map((option) => buildMoveSequenceOption({
+      from: option.moves[0].from,
+      to: option.to,
+      kind: 'chain',
+      steps: option.moves,
+      resultingGame: applyMoveSequence(game, option.moves)
+    }));
+    return [...singleOptions, ...chainOptions];
+  }, [game, moveOptionsForSelected, chainOptionsForSelected]);
   const destinationSet = useMemo(() => {
     if (isAnyRollAnimationRunning) return new Set();
+    if (pendingPathChoices) return new Set(pendingPathChoices.intermediateMap.keys());
     return new Set(destinationOptionsForSelected.map((option) => destinationKey(option.to)));
-  }, [destinationOptionsForSelected, isAnyRollAnimationRunning]);
+  }, [destinationOptionsForSelected, isAnyRollAnimationRunning, pendingPathChoices]);
 
   const movableSourceSet = useMemo(() => new Set(legalMoves.map((move) => sourceKey(move.from))), [legalMoves]);
   const showMovableSources = !isAnyRollAnimationRunning && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
@@ -123,6 +145,16 @@ export default function useGameController({ clock = defaultClock, media = defaul
 
   useEffect(() => { saveGameState(game, storage); }, [game, storage]);
   useEffect(() => { if (selectedSource != null && !movesBySource.has(sourceKey(selectedSource))) setSelectedSource(null); }, [movesBySource, selectedSource]);
+  useEffect(() => { setPendingPathChoices(null); }, [selectedSource, game]);
+  useEffect(() => {
+    if (!pendingPathChoices) return undefined;
+    const onEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      setPendingPathChoices(null);
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [pendingPathChoices]);
 
   const diceSignature = game.dice.values.join('-');
   useEffect(() => {
@@ -261,19 +293,53 @@ export default function useGameController({ clock = defaultClock, media = defaul
 
   function moveToDestination(destination) {
     if (isAnyRollAnimationRunning || isAnimatingMove || isComputerTurn || activeSelectedSource == null) return;
+    if (pendingPathChoices) return;
     const destinationId = destinationKey(destination);
-    const singleCandidates = destinationOptionsForSelected.filter((option) => option.kind === 'single' && destinationKey(option.to) === destinationId);
-    const chainCandidates = destinationOptionsForSelected.filter((option) => option.kind === 'chain' && destinationKey(option.to) === destinationId);
-    if (!singleCandidates.length && !chainCandidates.length) return;
-    let chosenOption = null;
-    if (!singleCandidates.length && chainCandidates.length) {
-      const preferredFirstMove = chooseMoveForDestination(game, chainCandidates.map((option) => option.moves[0]));
-      chosenOption = chainCandidates.find((option) => option.moves[0] === preferredFirstMove) ?? chainCandidates[0];
-    } else if (singleCandidates.length) {
-      const chosenMove = chooseMoveForDestination(game, singleCandidates.map((option) => option.moves[0]));
-      chosenOption = singleCandidates.find((option) => option.moves[0] === chosenMove) ?? singleCandidates[0];
-    } else chosenOption = chainCandidates[0];
-    if (chosenOption) void performMoveSequence(game, chosenOption.moves);
+    const candidates = destinationOptionsForSelected.filter((option) => destinationKey(option.to) === destinationId);
+    if (!candidates.length) return;
+    const isTwoStepChoice = candidates.every((option) => option.steps.length === 2);
+    if (!isTwoStepChoice) {
+      const chosenOption = candidates.length > 1
+        ? findDeterministicChoice(candidates)
+        : candidates[0];
+      if (chosenOption) void performMoveSequence(game, chosenOption.steps);
+      return;
+    }
+
+    const analysis = analyzePathChoices(candidates);
+    if (game.dev.debugOpen) console.debug('[path-choice]', {
+      legalSequenceCount: analysis.legalSequenceCount,
+      uniqueOutcomeCount: analysis.uniqueOutcomeCount,
+      promptShown: analysis.shouldPrompt
+    });
+
+    if (analysis.shouldPrompt) {
+      setPendingPathChoices({
+        from: activeSelectedSource,
+        finalTo: destination,
+        options: analysis.promptOptions,
+        intermediateMap: analysis.intermediateMap
+      });
+      return;
+    }
+
+    if (analysis.chosenOption) void performMoveSequence(game, analysis.chosenOption.steps);
+  }
+
+  function chooseIntermediatePath(intermediate) {
+    if (!pendingPathChoices) return;
+    const key = destinationKey(intermediate);
+    const options = pendingPathChoices.intermediateMap.get(key) ?? [];
+    const chosenOption = findDeterministicChoice(options);
+    if (!chosenOption) return;
+    setPendingPathChoices(null);
+    void performMoveSequence(game, chosenOption.steps);
+  }
+
+
+
+  function cancelPendingPathChoice() {
+    setPendingPathChoices(null);
   }
 
   function resetFlowState() {
@@ -285,6 +351,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     setIsAnimatingRoll(false);
     setToastMessage(null);
     setSelectedSource(null);
+    setPendingPathChoices(null);
   }
 
   function handleNewGame() {
@@ -315,6 +382,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   function toggleDebug() { setGame((prev) => ({ ...prev, dev: { ...prev.dev, debugOpen: !prev.dev.debugOpen } })); }
   function handleSelectSource(source) {
     if (isAnyRollAnimationRunning || isAnimatingMove || isComputerTurn || game.winner || game.dice.remaining.length === 0) return;
+    if (pendingPathChoices) return;
     const key = sourceKey(source);
     if (!movesBySource.has(key)) return;
     if (selectedSource === source) return setSelectedSource(null);
@@ -424,8 +492,9 @@ export default function useGameController({ clock = defaultClock, media = defaul
     game, gamePhase, openingMessage, playerPipCount, computerPipCount, canPlayerRoll, isComputerTurn, isAnimatingMove,
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
+    pendingPathChoices,
     boardStageRef, pointRefs, barRef, bearOffRefs,
-    handleRoll, handleSelectSource, moveToDestination, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
+    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie
   };
 }

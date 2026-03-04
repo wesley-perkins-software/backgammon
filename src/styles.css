@@ -690,6 +690,42 @@ button:focus-visible {
     0 0 8px 0 var(--legal-glow);
 }
 
+.path-choice-prompt {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 30;
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 209, 102, 0.7);
+  background: rgba(23, 32, 43, 0.92);
+  color: #f7f0dc;
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.24);
+  outline: none;
+}
+
+.path-choice-prompt p,
+.path-choice-prompt small {
+  margin: 0;
+  display: block;
+}
+
+.path-choice-prompt small {
+  opacity: 0.86;
+}
+
+
+
+.board-stage.pending-path-choice .point.legal,
+.board-stage.pending-path-choice .point.is-legal,
+.board-stage.pending-path-choice .bearoff-tray.legal,
+.board-stage.pending-path-choice .bearoff-tray.is-legal {
+  box-shadow:
+    0 0 0 2px rgba(92, 214, 127, 0.95) inset,
+    0 0 12px 0 rgba(92, 214, 127, 0.35);
+}
+
 .point.selected .checker-stack,
 .point.is-selected .checker-stack {
   will-change: transform;
