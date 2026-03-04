@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { PLAYER_A, PLAYER_B } from '../../game.js';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
@@ -110,21 +111,51 @@ export default function BoardSurface(props) {
     boardStageRef, pointRefs, bearOffRefs, barRef, game, gamePhase, openingMessage, playerPipCount, computerPipCount,
     isComputerTurn, activeSelectedSource, destinationSet, movableSourceSet, showMovableSources,
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
-    pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs
+    pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
+    pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice
   } = props;
+
+  const pathPromptRef = useRef(null);
+
+  useEffect(() => {
+    if (pendingPathChoices && pathPromptRef.current) pathPromptRef.current.focus();
+  }, [pendingPathChoices]);
 
   const renderPoint = (point, isTop) => <Point key={point} index={point} value={game.points[point]} isTop={isTop} pointRef={(node) => {
     if (node) pointRefs.current.set(point, node);
     else pointRefs.current.delete(point);
   }} selected={activeSelectedSource === point} highlighted={destinationSet.has(String(point))} movable={showMovableSources && movableSourceSet.has(String(point))} onClick={() => {
     if (isAnimatingMove || isComputerTurn) return;
+    if (pendingPathChoices) {
+      if (destinationSet.has(String(point))) chooseIntermediatePath(point);
+      else cancelPendingPathChoice();
+      return;
+    }
     if (activeSelectedSource != null && destinationSet.has(String(point))) moveToDestination(point);
     else handleSelectSource(point);
   }} />;
 
   return (
-    <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board">
+    <section ref={boardStageRef} className="board-stage" aria-label="Backgammon board" onClick={(event) => {
+      if (!pendingPathChoices) return;
+      if (event.target.closest('.path-choice-prompt')) return;
+      if (event.target.closest('.point.legal, .bearoff-tray.legal')) return;
+      cancelPendingPathChoice();
+    }}>
       {gamePhase === 'OPENING_ROLL' && <section className="opening-roll-panel" aria-live="polite"><p className="opening-roll-message">{openingMessage}</p></section>}
+      {pendingPathChoices && (
+        <section
+          className="path-choice-prompt"
+          role="dialog"
+          aria-live="polite"
+          aria-label="Choose your path"
+          tabIndex={-1}
+          ref={pathPromptRef}
+        >
+          <p>Choose your path</p>
+          <small>Which blot do you want to hit?</small>
+        </section>
+      )}
       <div className="game-layout">
         <div className="pip-row" aria-label="Pip counts">
           <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}><span className="pip-box-label">Computer</span><span className="pip-box-value">PIP: {computerPipCount}</span><span className="pip-box-meta">Bar: {game.bar.B}</span></div>
@@ -133,14 +164,23 @@ export default function BoardSurface(props) {
         <div className="board-surface">
           <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
           <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
-          <Bar game={game} activeSelectedSource={activeSelectedSource} showMovableSources={showMovableSources} movableSourceSet={movableSourceSet} destinationSet={destinationSet} onSelectBar={() => { if (!isAnimatingMove && !isComputerTurn) handleSelectSource('bar'); }} barRef={barRef} />
+          <Bar game={game} activeSelectedSource={activeSelectedSource} showMovableSources={showMovableSources} movableSourceSet={movableSourceSet} destinationSet={destinationSet} onSelectBar={() => {
+            if (pendingPathChoices) return cancelPendingPathChoice();
+            if (!isAnimatingMove && !isComputerTurn) handleSelectSource('bar');
+          }} barRef={barRef} />
           <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
           <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
           <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isAnyRollAnimationRunning} rollingDiceValues={pendingRoll?.values ?? null} rollingAnimatedMask={pendingRoll?.animatedMask ?? null} disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling} />
         </div>
         <aside className="home-rail" aria-label="Bear off area">
-          <BearOffTray label="Computer" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} onClick={() => { if (!isAnimatingMove && !isComputerTurn) moveToDestination('off'); }} />
-          <BearOffTray label="Player" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} onClick={() => { if (!isAnimatingMove && !isComputerTurn) moveToDestination('off'); }} />
+          <BearOffTray label="Computer" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} onClick={() => {
+            if (pendingPathChoices) return cancelPendingPathChoice();
+            if (!isAnimatingMove && !isComputerTurn) moveToDestination('off');
+          }} />
+          <BearOffTray label="Player" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} onClick={() => {
+            if (pendingPathChoices) return cancelPendingPathChoice();
+            if (!isAnimatingMove && !isComputerTurn) moveToDestination('off');
+          }} />
         </aside>
       </div>
       {movingChecker && <span aria-hidden="true" className={`checker moving-checker checker-${movingChecker.player === 'B' ? 'b' : 'a'}`} style={{ left: `${movingChecker.x}px`, top: `${movingChecker.y}px`, '--move-step-ms': `${moveStepMs}ms` }} />}
