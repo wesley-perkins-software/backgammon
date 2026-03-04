@@ -715,6 +715,23 @@ button:focus-visible {
   opacity: 0.86;
 }
 
+.path-choice-options {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.path-choice-option {
+  font: inherit;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 209, 102, 0.5);
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.35rem;
+  text-align: left;
+}
+
 .point.selected .checker-stack,
 .point.is-selected .checker-stack {
   will-change: transform;

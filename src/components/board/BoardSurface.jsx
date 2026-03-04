@@ -112,7 +112,7 @@ export default function BoardSurface(props) {
     isComputerTurn, activeSelectedSource, destinationSet, movableSourceSet, showMovableSources,
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
-    pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice
+    pendingPathChoices, chooseIntermediatePath, choosePathOption, cancelPendingPathChoice
   } = props;
 
   const pathPromptRef = useRef(null);
@@ -154,6 +154,18 @@ export default function BoardSurface(props) {
         >
           <p>Choose your path</p>
           <small>Which blot do you want to hit?</small>
+          <div className="path-choice-options">
+            {pendingPathChoices.options.map((choice) => (
+              <button
+                key={choice.id}
+                type="button"
+                className="path-choice-option"
+                onClick={() => choosePathOption(choice.id)}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
         </section>
       )}
       <div className="game-layout">

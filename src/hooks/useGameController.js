@@ -18,10 +18,9 @@ import * as defaultRandom from '../platform/random.js';
 import * as defaultStorage from '../platform/storage.js';
 import { clearSavedGameState, loadGameState, saveGameState } from '../services/persistence.js';
 import {
-  buildIntermediateChoiceMap,
+  analyzePathChoices,
   buildMoveSequenceOption,
-  findDeterministicChoice,
-  shouldPromptForPathChoice
+  findDeterministicChoice
 } from './movePathChoice.js';
 
 const MOVE_STEP_MS = 210;
@@ -299,20 +298,32 @@ export default function useGameController({ clock = defaultClock, media = defaul
     const candidates = destinationOptionsForSelected.filter((option) => destinationKey(option.to) === destinationId);
     if (!candidates.length) return;
     const isTwoStepChoice = candidates.every((option) => option.steps.length === 2);
-    if (candidates.length > 1 && isTwoStepChoice && shouldPromptForPathChoice(candidates)) {
+    if (!isTwoStepChoice) {
+      const chosenOption = candidates.length > 1
+        ? findDeterministicChoice(candidates)
+        : candidates[0];
+      if (chosenOption) void performMoveSequence(game, chosenOption.steps);
+      return;
+    }
+
+    const analysis = analyzePathChoices(candidates);
+    if (game.dev.debugOpen) console.debug('[path-choice]', {
+      legalSequenceCount: analysis.legalSequenceCount,
+      uniqueOutcomeCount: analysis.uniqueOutcomeCount,
+      promptShown: analysis.shouldPrompt
+    });
+
+    if (analysis.shouldPrompt) {
       setPendingPathChoices({
         from: activeSelectedSource,
         finalTo: destination,
-        options: candidates,
-        intermediateMap: buildIntermediateChoiceMap(candidates)
+        options: analysis.promptOptions,
+        intermediateMap: analysis.intermediateMap
       });
       return;
     }
 
-    const chosenOption = candidates.length > 1
-      ? findDeterministicChoice(candidates)
-      : candidates[0];
-    if (chosenOption) void performMoveSequence(game, chosenOption.steps);
+    if (analysis.chosenOption) void performMoveSequence(game, analysis.chosenOption.steps);
   }
 
   function chooseIntermediatePath(intermediate) {
@@ -323,6 +334,15 @@ export default function useGameController({ clock = defaultClock, media = defaul
     if (!chosenOption) return;
     setPendingPathChoices(null);
     void performMoveSequence(game, chosenOption.steps);
+  }
+
+
+  function choosePathOption(optionId) {
+    if (!pendingPathChoices) return;
+    const promptOption = pendingPathChoices.options.find((option) => option.id === optionId);
+    if (!promptOption) return;
+    setPendingPathChoices(null);
+    void performMoveSequence(game, promptOption.option.steps);
   }
 
   function cancelPendingPathChoice() {
@@ -481,7 +501,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
     pendingPathChoices,
     boardStageRef, pointRefs, barRef, bearOffRefs,
-    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
+    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, choosePathOption, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie
   };
 }
