@@ -33,11 +33,9 @@ export default function App({ showSeo = true, seoPath = '/play', seoTitle = 'Pla
       {controller.gamePhase !== 'OPENING_ROLL' && <section className="roll-toast" aria-live="polite">{controller.game.statusText}</section>}
 
       <ControlsPanel
-        canPlayerRoll={controller.canPlayerRoll}
         isAnimatingMove={controller.isAnimatingMove}
         isAnyRollAnimationRunning={controller.isAnyRollAnimationRunning}
         undoCount={controller.game.undoStack.length}
-        onRoll={controller.handleRoll}
         onNewGame={controller.handleNewGame}
         onUndo={controller.handleUndo}
         onResetPosition={controller.handleResetPosition}
