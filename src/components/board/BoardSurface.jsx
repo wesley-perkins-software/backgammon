@@ -57,7 +57,7 @@ function DieFace({ value, className = '', ariaHidden = false, used = false }) {
   );
 }
 
-function BoardDice({ game, diceAnimKey, isBoardDiceRolling, rollingDiceValues, rollingAnimatedMask, disableUsedStyling }) {
+function BoardDice({ game, diceAnimKey, isBoardDiceRolling, rollingDiceValues, rollingAnimatedMask, disableUsedStyling, side = 'right' }) {
   const isPendingRollAnimation = Array.isArray(rollingDiceValues) && rollingDiceValues.length > 0;
   const shouldIgnoreUsedStyling = disableUsedStyling || isPendingRollAnimation || isBoardDiceRolling;
   const rolledDiceWithUsage = (isPendingRollAnimation
@@ -68,7 +68,7 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, rollingDiceValues, r
 
   if (rolledDiceWithUsage.length === 0) return null;
   if (!isBoardDiceRolling) {
-    return <div className="board-dice-overlay" aria-hidden="true">{rolledDiceWithUsage.map((die, idx) => <DieFace key={`board-static-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />)}</div>;
+    return <div className={`board-dice-overlay board-dice-overlay-${side}`} aria-hidden="true">{rolledDiceWithUsage.map((die, idx) => <DieFace key={`board-static-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />)}</div>;
   }
 
   const pipsByValue = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
@@ -79,7 +79,7 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, rollingDiceValues, r
   };
 
   return (
-    <div className="board-dice-overlay" aria-hidden="true">
+    <div className={`board-dice-overlay board-dice-overlay-${side}`} aria-hidden="true">
       {rolledDiceWithUsage.map((die, idx) => {
         const shouldAnimateThisDie = !Array.isArray(rollingAnimatedMask) || rollingAnimatedMask[idx] !== false;
         if (!shouldAnimateThisDie) return <DieFace key={`board-static-opening-die-${idx}-${die.value}`} value={die.value} used={die.used} ariaHidden />;
@@ -106,13 +106,18 @@ function BearOffTray({ label, count, highlighted, onClick, trayRef, className = 
   return <button ref={trayRef} type="button" className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${className}`.trim()} onClick={onClick} aria-label={`${label} bear off`}><span className="tray-label">{label} Off</span><span className="tray-count">{count}</span></button>;
 }
 
+function BoardRollControl({ canPlayerRoll, onRoll }) {
+  return <div className="board-roll-overlay"><button type="button" className="board-roll-button" onClick={() => onRoll()} aria-label="Roll Dice" disabled={!canPlayerRoll}>Roll Dice</button></div>;
+}
+
 export default function BoardSurface(props) {
   const {
     boardStageRef, pointRefs, bearOffRefs, barRef, game, gamePhase, openingMessage, playerPipCount, computerPipCount,
     isComputerTurn, activeSelectedSource, destinationSet, movableSourceSet, showMovableSources,
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
-    pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice
+    pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice,
+    canPlayerRoll, handleRoll
   } = props;
 
   const pathPromptRef = useRef(null);
@@ -169,7 +174,8 @@ export default function BoardSurface(props) {
           }} barRef={barRef} />
           <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
           <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-          <BoardDice game={game} diceAnimKey={diceAnimKey} isBoardDiceRolling={isAnyRollAnimationRunning} rollingDiceValues={pendingRoll?.values ?? null} rollingAnimatedMask={pendingRoll?.animatedMask ?? null} disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling} />
+          <BoardRollControl canPlayerRoll={canPlayerRoll} onRoll={handleRoll} />
+          <BoardDice game={game} side="right" diceAnimKey={diceAnimKey} isBoardDiceRolling={isAnyRollAnimationRunning} rollingDiceValues={pendingRoll?.values ?? null} rollingAnimatedMask={pendingRoll?.animatedMask ?? null} disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling} />
         </div>
         <aside className="home-rail" aria-label="Bear off area">
           <BearOffTray label="Computer" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} onClick={() => {
