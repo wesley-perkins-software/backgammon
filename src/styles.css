@@ -861,8 +861,10 @@ button:focus-visible {
 
   .home-rail {
     grid-row: 3;
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: 1fr;
+    align-items: stretch;
   }
 
 }
@@ -1091,6 +1093,7 @@ button:focus-visible {
   }
 
   .home-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
   }
 }
