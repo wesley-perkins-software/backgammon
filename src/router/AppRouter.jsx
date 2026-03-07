@@ -1,6 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Layout from '../components/Layout.jsx';
-import PlayPage from '../App.jsx';
 import AboutPage from '../pages/AboutPage.jsx';
 import ChangelogPage from '../pages/ChangelogPage.jsx';
 import FaqPage from '../pages/FaqPage.jsx';
@@ -18,7 +17,6 @@ export default function AppRouter() {
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/play" element={<PlayPage />} />
           <Route path="/rules" element={<RulesPage />} />
           <Route path="/strategy" element={<StrategyPage />} />
           <Route path="/faq" element={<FaqPage />} />

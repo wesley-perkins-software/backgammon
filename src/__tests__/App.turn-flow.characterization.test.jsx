@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import App from '../App.jsx';
-import { STORAGE_KEY } from '../game.js';
 
 function setMatchMedia(prefersReducedMotion) {
   Object.defineProperty(window, 'matchMedia', {
@@ -27,15 +26,6 @@ describe('App turn-flow characterization', () => {
     setMatchMedia(true);
   });
 
-  it('clear saved game removes STORAGE_KEY from localStorage', async () => {
-    window.localStorage.setItem(STORAGE_KEY, '{"seeded":true}');
-    const user = userEvent.setup();
-    render(<App showSeo={false} showHeader={false} />);
-
-    await user.click(screen.getByRole('button', { name: 'Clear Saved Game' }));
-
-    expect(window.localStorage.getItem(STORAGE_KEY)).not.toEqual('{"seeded":true}');
-  });
 
   it('set dice + roll follows forced dice values in status text', async () => {
     const user = userEvent.setup();

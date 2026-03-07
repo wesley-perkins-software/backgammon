@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <p>Backgammon Local runs entirely in your browser and does not require an account.</p>
       <p>Game progress is stored in localStorage so your current match can persist between visits on the same device.</p>
       <p>No server-side game profile is needed for normal use, and no personal information is required to play.</p>
-      <p>To remove saved game data, use the in-game Clear Saved Game action or clear this site&apos;s storage in your browser settings.</p>
+      <p>To remove saved game data, clear this site&apos;s storage in your browser settings.</p>
     </article>
   );
 }

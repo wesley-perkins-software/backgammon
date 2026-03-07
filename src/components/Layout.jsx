@@ -9,7 +9,6 @@ export default function Layout({ children }) {
           <Link to="/" className="site-title">Backgammon Local</Link>
           <nav aria-label="Primary navigation" className="site-nav">
             <NavLink to="/" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
-            <NavLink to="/play" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Play</NavLink>
             <NavLink to="/rules" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Rules</NavLink>
             <NavLink to="/strategy" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Strategy</NavLink>
             <NavLink to="/faq" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>FAQ</NavLink>

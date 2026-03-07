@@ -8,7 +8,7 @@ import * as defaultMedia from './platform/media.js';
 import * as defaultRandom from './platform/random.js';
 import * as defaultStorage from './platform/storage.js';
 
-export default function App({ showSeo = true, seoPath = '/play', seoTitle = 'Play Backgammon Online Locally', seoDescription = 'Play Backgammon Local against the computer with automatic local save and beginner-friendly controls.', showHeader = true, className = '', adapters = {} }) {
+export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Backgammon Online Locally', seoDescription = 'Play Backgammon Local against the computer with automatic local save and beginner-friendly controls.', showHeader = true, className = '', adapters = {} }) {
   const {
     clock = defaultClock,
     media = defaultMedia,
@@ -30,7 +30,7 @@ export default function App({ showSeo = true, seoPath = '/play', seoTitle = 'Pla
       <BoardSurface {...controller} />
 
       {controller.toastMessage && <section className="roll-toast" aria-live="polite">{controller.toastMessage}</section>}
-      {controller.gamePhase !== 'OPENING_ROLL' && <section className="roll-toast" aria-live="polite">{controller.game.statusText}</section>}
+      <section className="roll-toast" aria-live="polite">{controller.gamePhase === 'OPENING_ROLL' ? controller.openingMessage : controller.game.statusText}</section>
 
       <ControlsPanel
         isAnimatingMove={controller.isAnimatingMove}
@@ -38,8 +38,6 @@ export default function App({ showSeo = true, seoPath = '/play', seoTitle = 'Pla
         undoCount={controller.game.undoStack.length}
         onNewGame={controller.handleNewGame}
         onUndo={controller.handleUndo}
-        onResetPosition={controller.handleResetPosition}
-        onClearSavedGame={controller.clearSavedGame}
       />
 
       <DebugPanel
