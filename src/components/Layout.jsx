@@ -21,6 +21,9 @@ export default function Layout({ children }) {
 
       <footer className="site-footer">
         <nav aria-label="Footer navigation" className="site-footer-nav">
+          <NavLink to="/glossary">Glossary</NavLink>
+          <NavLink to="/single-player-backgammon">Single Player</NavLink>
+          <NavLink to="/free-backgammon-online">Free Backgammon</NavLink>
           <NavLink to="/about">About</NavLink>
           <NavLink to="/privacy">Privacy</NavLink>
           <NavLink to="/changelog">Changelog</NavLink>
