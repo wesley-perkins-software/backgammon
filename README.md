@@ -1,68 +1,46 @@
-# Backgammon Local (Frontend Only)
+# Backgammon Local
 
-A complete backgammon web app that runs fully in the browser, with Player B controlled by a computer AI.
+Backgammon Local is a single-page React + Vite application for playing backgammon in the browser against a built-in computer opponent. The app keeps all rules, turn progression, move generation, and AI move selection on the client, with no API calls or backend services.
 
-## Tech
-- React + Vite
-- No backend
-- No external services
-- State persisted to `window.localStorage` under `backgammon.save.v1`
+The codebase is intentionally compact: `src/game.js` contains core game/state logic, while `src/App.jsx` owns UI composition, user interaction flow, animation timing, and persistence wiring. The app is designed to be easy to hand off and extend safely, especially for UI and UX improvements that should not alter core rules.
 
-## Features
-- Standard 24-point board with bar and bear-off trays
-- Classic wood-style board visuals with triangular points and styled checker stacks
-- Standard starting position
-- Dice rolling with doubles handled as 4 moves
-- Graphical dice faces with roll animation and remaining-move chips
-- Legal move generation with:
-  - blocked points (2+ opponent checkers)
-  - hitting blots (single checker)
-  - mandatory bar entry before other moves
-  - bearing off rules including oversized die when no checker behind
-  - forced higher die when only one die can be played
-- Click-to-play interaction:
-  - select source checker stack (or bar)
-  - legal destinations highlighted
-  - click destination to move
-- Computer opponent:
-  - Player A is human
-  - Player B auto-rolls and auto-plays legal moves using a lightweight heuristic AI
-- Turn progression and automatic pass when no legal moves exist after a roll
-- Undo stack (serializable, persisted)
-- Controls:
-  - Roll Dice
-  - New Game
-  - Undo
-  - Reset to Starting Position
-  - Clear Saved Game
-- Dev/debug panel to set deterministic dice rolls
+## Key constraints
+
+- **Frontend-only**: no server-side code, network API, or database.
+- **Persistence uses only `localStorage`** via `STORAGE_KEY = backgammon.save.v1`.
+- **No backend contract**: all validation and state transitions happen in browser code.
 
 ## Run locally
-1. Install dependencies:
+
 ```bash
 npm install
-```
-2. Start dev server:
-```bash
 npm run dev
 ```
-3. Build production bundle:
+
+Then open the local Vite URL (default `http://localhost:5173`).
+
+## Build and preview
+
 ```bash
 npm run build
-```
-4. Preview production build:
-```bash
 npm run preview
 ```
 
-## Test on mobile
-1. Start Vite on your LAN so your phone can reach it:
-```bash
-npm run dev -- --host
-```
-2. In the terminal output, open the `Network` URL on your phone (same Wi-Fi), for example `http://192.168.x.x:5173`.
-3. For quick desktop simulation, open browser dev tools and toggle device emulation (responsive mode).
+## High-level folder structure
 
-## Notes
-- The app automatically saves after every state change.
-- On load, it restores from localStorage when schema version matches; otherwise it safely starts a new game.
+- `src/main.jsx` — React entry point and app mount.
+- `src/App.jsx` — UI layout, interaction handling, animation flow, and computer-turn orchestration.
+- `src/game.js` — game rules, legal move computation, turn transitions, undo snapshots, serialization/hydration.
+- `src/styles.css` — board visuals, checker/dice styling, highlight system, and responsive/mobile layout rules.
+- `docs/` — handoff documentation for architecture, rules, state machine, and roadmap.
+
+## How to play (app summary)
+
+1. Start a new game and use **Roll Dice** to resolve opening roll and normal turns.
+2. On your turn, click a highlighted source checker (or your checker on the bar) to select it.
+3. Click a highlighted destination to move. If only one legal move path exists, the app resolves it automatically.
+4. If you have checkers on the bar, you must re-enter from the bar before moving other checkers.
+5. Bear off once all your checkers are in your home board.
+6. Use **Undo** to step back one snapshot, or **Reset to Starting Position / Clear Saved Game** for resets.
+
+For rule-level details, see [`docs/RULES.md`](docs/RULES.md).

@@ -1,10 +1,13 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.jsx';
+import { HelmetProvider } from 'react-helmet-async';
+import AppRouter from './router/AppRouter.jsx';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+      <AppRouter />
+    </HelmetProvider>
   </React.StrictMode>
 );
