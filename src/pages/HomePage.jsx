@@ -50,7 +50,6 @@ export default function HomePage() {
       <section className="home-game-hero" aria-labelledby="home-play-heading">
         <div className="home-hero-topline">
           <h1 id="home-play-heading">Play Backgammon Online</h1>
-          <Link className="cta-button cta-secondary" to="/play">Open full screen /play</Link>
         </div>
         <GameExperience showSeo={false} showHeader={false} className="home-embedded-game" />
       </section>

@@ -147,7 +147,6 @@ export default function BoardSurface(props) {
       if (event.target.closest('.point.legal, .bearoff-tray.legal')) return;
       cancelPendingPathChoice();
     }}>
-      {gamePhase === 'OPENING_ROLL' && <section className="opening-roll-panel" aria-live="polite"><p className="opening-roll-message">{openingMessage}</p></section>}
       {pendingPathChoices && (
         <section
           className="path-choice-prompt"

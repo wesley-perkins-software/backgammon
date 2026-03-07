@@ -40,7 +40,7 @@ const faqItems = [
   },
   {
     q: 'Can I clear saved data?',
-    a: 'Yes. You can use the in-game Clear Saved Game control if available, or remove site data directly in browser settings. Clearing site data removes locally saved game progress for this browser.'
+    a: 'Yes. You can remove site data directly in browser settings. Clearing site data removes locally saved game progress for this browser.'
   },
   {
     q: 'Can I play on mobile?',
