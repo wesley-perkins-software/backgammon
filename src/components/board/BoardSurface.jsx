@@ -28,14 +28,19 @@ function getRolledDiceWithUsage(game, { expandDoubles = true } = {}) {
       ? [game.dice.values[0], game.dice.values[0], game.dice.values[0], game.dice.values[0]]
       : game.dice.values;
 
-  return displayDiceValues.map((die) => {
+  const diceWithUsage = Array.from({ length: displayDiceValues.length });
+  for (let i = displayDiceValues.length - 1; i >= 0; i -= 1) {
+    const die = displayDiceValues[i];
     const available = remainingCounts[die] ?? 0;
     if (available > 0) {
       remainingCounts[die] = available - 1;
-      return { value: die, used: false };
+      diceWithUsage[i] = { value: die, used: false };
+      continue;
     }
-    return { value: die, used: true };
-  });
+    diceWithUsage[i] = { value: die, used: true };
+  }
+
+  return diceWithUsage;
 }
 
 function DieFace({ value, className = '', ariaHidden = false, used = false }) {
