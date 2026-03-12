@@ -242,7 +242,7 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.28rem;
-  padding: 0.7rem 0.4rem;
+  padding: 0.875rem 0.625rem;
   position: relative;
   overflow: visible;
   box-shadow:
@@ -273,7 +273,7 @@ button:focus-visible {
 }
 
 .tray-count {
-  font-size: clamp(2.25rem, 3.2vw, 2.6rem);
+  font-size: clamp(2.625rem, 3.5vw, 3rem);
   font-weight: 800;
   line-height: 0.95;
 }
@@ -763,18 +763,20 @@ button:focus-visible {
   0%,
   100% {
     box-shadow:
-      0 0 0 2px rgba(242, 197, 114, 0.45),
-      0 0 20px rgba(242, 197, 114, 0.6),
-      0 0 30px rgba(242, 197, 114, 0.45),
-      inset 0 0 10px rgba(255, 240, 200, 0.18);
+      0 0 0 3px rgba(60, 40, 20, 0.45),
+      0 0 10px rgba(242, 197, 114, 0.75),
+      0 0 18px rgba(242, 197, 114, 0.55),
+      inset 0 0 8px rgba(255, 240, 200, 0.16);
+    filter: brightness(1.04);
   }
 
   50% {
     box-shadow:
-      0 0 0 2px rgba(242, 197, 114, 0.56),
-      0 0 24px rgba(242, 197, 114, 0.68),
-      0 0 34px rgba(242, 197, 114, 0.5),
-      inset 0 0 12px rgba(255, 240, 200, 0.22);
+      0 0 0 3px rgba(60, 40, 20, 0.52),
+      0 0 12px rgba(242, 197, 114, 0.82),
+      0 0 20px rgba(242, 197, 114, 0.6),
+      inset 0 0 10px rgba(255, 240, 200, 0.2);
+    filter: brightness(1.06);
   }
 }
 
@@ -782,10 +784,11 @@ button:focus-visible {
 .bearoff-tray.is-legal {
   border: 3px solid #F2C572;
   box-shadow:
-    0 0 0 2px rgba(242, 197, 114, 0.45),
-    0 0 20px rgba(242, 197, 114, 0.6),
-    0 0 30px rgba(242, 197, 114, 0.45),
-    inset 0 0 10px rgba(255, 240, 200, 0.18);
+    0 0 0 3px rgba(60, 40, 20, 0.45),
+    0 0 10px rgba(242, 197, 114, 0.75),
+    0 0 18px rgba(242, 197, 114, 0.55),
+    inset 0 0 8px rgba(255, 240, 200, 0.16);
+  filter: brightness(1.05);
   animation: bearoffGlowPulse 2s ease-in-out infinite;
 }
 
@@ -816,10 +819,10 @@ button:focus-visible {
 .bearoff-tray.selected.legal,
 .bearoff-tray.is-selected.is-legal {
   box-shadow:
-    0 0 0 2px rgba(242, 197, 114, 0.45),
-    0 0 20px rgba(242, 197, 114, 0.6),
-    0 0 30px rgba(242, 197, 114, 0.45),
-    inset 0 0 10px rgba(255, 240, 200, 0.18),
+    0 0 0 3px rgba(60, 40, 20, 0.45),
+    0 0 10px rgba(242, 197, 114, 0.75),
+    0 0 18px rgba(242, 197, 114, 0.55),
+    inset 0 0 8px rgba(255, 240, 200, 0.16),
     0 0 0 3px var(--selected-outline) inset,
     0 0 12px 1px var(--selected-glow);
 }
@@ -834,6 +837,7 @@ button:focus-visible {
     transform: none;
     will-change: auto;
     animation: none;
+    filter: none;
   }
 }
 
@@ -955,7 +959,7 @@ button:focus-visible {
   }
 
   .tray-count {
-    font-size: clamp(1.9rem, 6vw, 2.25rem);
+    font-size: clamp(2rem, 6.5vw, 2.4rem);
   }
 
 }
@@ -1146,7 +1150,7 @@ button:focus-visible {
   }
 
   .tray-count {
-    font-size: clamp(1.65rem, 6vw, 2rem);
+    font-size: clamp(1.85rem, 7vw, 2.2rem);
   }
 
   .board-dice-overlay {
