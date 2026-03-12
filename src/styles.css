@@ -243,6 +243,8 @@ button:focus-visible {
   gap: 0.25rem;
   min-height: clamp(64px, 15vw, 86px);
   padding: 0.35rem 0.25rem;
+  position: relative;
+  overflow: visible;
 }
 
 
@@ -705,6 +707,20 @@ button:focus-visible {
     0 0 8px 0 var(--legal-glow);
 }
 
+
+@keyframes bearoffHaloPulse {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: scale(1.055);
+  }
+}
+
 @keyframes bearoffGlowPulse {
   0%,
   100% {
@@ -729,6 +745,19 @@ button:focus-visible {
     0 0 12px rgba(255, 210, 122, 0.8),
     0 0 22px rgba(255, 210, 122, 0.6);
   animation: bearoffGlowPulse 1.8s ease-in-out infinite;
+}
+
+.bearoff-tray.legal::after,
+.bearoff-tray.is-legal::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 16px rgba(255, 210, 122, 0.55),
+    0 0 30px rgba(255, 210, 122, 0.42);
+  animation: bearoffHaloPulse 1.8s ease-in-out infinite;
 }
 
 .board-stage.pending-path-choice .point.path-choice-option,
@@ -769,7 +798,9 @@ button:focus-visible {
   .point.is-selected .checker-stack,
   .barForcedSelected .bar-checker:first-child,
   .bearoff-tray.legal,
-  .bearoff-tray.is-legal {
+  .bearoff-tray.is-legal,
+  .bearoff-tray.legal::after,
+  .bearoff-tray.is-legal::after {
     transition: none;
     transform: none;
     will-change: auto;
