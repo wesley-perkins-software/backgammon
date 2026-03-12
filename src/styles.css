@@ -230,6 +230,8 @@ button:focus-visible {
 }
 
 .bearoff-tray {
+  position: relative;
+  overflow: hidden;
   border-radius: 0.62rem;
   border: 2px solid #3f2918;
   background:
@@ -711,6 +713,89 @@ button:focus-visible {
     0 0 8px 0 var(--legal-glow);
 }
 
+@keyframes bearoffGlowPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px #FFE6A6,
+      0 0 16px rgba(255, 214, 130, 0.88),
+      0 0 30px rgba(255, 196, 92, 0.72),
+      0 0 48px rgba(255, 196, 92, 0.42);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 3px #FFE6A6,
+      0 0 22px rgba(255, 214, 130, 0.98),
+      0 0 38px rgba(255, 196, 92, 0.82),
+      0 0 58px rgba(255, 196, 92, 0.5);
+  }
+}
+
+@keyframes bearoffTintPulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.34;
+  }
+}
+
+.bearoff-tray.legal,
+.bearoff-tray.is-legal {
+  border: 3px solid #FFE6A6;
+  box-shadow:
+    0 0 0 3px #FFE6A6,
+    0 0 16px rgba(255, 214, 130, 0.88),
+    0 0 30px rgba(255, 196, 92, 0.72),
+    0 0 48px rgba(255, 196, 92, 0.42);
+  animation: bearoffGlowPulse 1.9s ease-in-out infinite;
+}
+
+.bearoff-tray.legal::before,
+.bearoff-tray.is-legal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(140% 120% at 35% 25%, rgba(255, 239, 191, 0.32), rgba(255, 212, 122, 0.06) 58%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(180deg, rgba(255, 222, 142, 0.2), rgba(255, 203, 103, 0.08));
+  animation: bearoffTintPulse 1.9s ease-in-out infinite;
+}
+
+.bearoff-tray.legal::after,
+.bearoff-tray.is-legal::after {
+  content: 'Bear off';
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 2;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 241, 200, 0.92);
+  background: linear-gradient(180deg, rgba(126, 76, 32, 0.86), rgba(94, 54, 22, 0.94));
+  color: #fff2cc;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  padding: 0.15rem 0.36rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+
+.bearoff-tray.legal .tray-label,
+.bearoff-tray.legal .tray-count,
+.bearoff-tray.is-legal .tray-label,
+.bearoff-tray.is-legal .tray-count {
+  position: relative;
+  z-index: 1;
+}
+
 .board-stage.pending-path-choice .point.path-choice-option,
 .board-stage.pending-path-choice .bearoff-tray.path-choice-option {
   box-shadow:
@@ -734,13 +819,50 @@ button:focus-visible {
     0 0 12px 1px var(--selected-glow);
 }
 
+.bearoff-tray.selected.legal,
+.bearoff-tray.is-selected.is-legal {
+  border: 3px solid #FFE6A6;
+  box-shadow:
+    0 0 0 3px #FFE6A6,
+    0 0 16px rgba(255, 214, 130, 0.88),
+    0 0 30px rgba(255, 196, 92, 0.72),
+    0 0 48px rgba(255, 196, 92, 0.42),
+    0 0 0 3px var(--selected-outline) inset,
+    0 0 12px 1px var(--selected-glow);
+}
+
+@media (max-width: 760px) {
+  .bearoff-tray.legal,
+  .bearoff-tray.is-legal,
+  .bearoff-tray.selected.legal,
+  .bearoff-tray.is-selected.is-legal {
+    box-shadow:
+      0 0 0 3px #FFE6A6,
+      0 0 18px rgba(255, 214, 130, 0.96),
+      0 0 34px rgba(255, 196, 92, 0.82),
+      0 0 56px rgba(255, 196, 92, 0.54);
+  }
+
+  .bearoff-tray.legal::after,
+  .bearoff-tray.is-legal::after {
+    font-size: 0.54rem;
+    top: 0.22rem;
+    right: 0.22rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .point.selected .checker-stack,
   .point.is-selected .checker-stack,
-  .barForcedSelected .bar-checker:first-child {
+  .barForcedSelected .bar-checker:first-child,
+  .bearoff-tray.legal,
+  .bearoff-tray.is-legal,
+  .bearoff-tray.legal::before,
+  .bearoff-tray.is-legal::before {
     transition: none;
     transform: none;
     will-change: auto;
+    animation: none;
   }
 }
 
