@@ -2,22 +2,18 @@ import { Link } from 'react-router-dom';
 import GameExperience from '../App.jsx';
 import SEO, { SITE_URL } from '../components/SEO.jsx';
 
-const faqItems = [
+const faqPreviewItems = [
   {
     q: 'Do I need an account to play?',
-    a: 'No. You can play immediately with no signup or download.'
-  },
-  {
-    q: 'Can beginners use this site?',
-    a: 'Yes. The game is designed for simple, clear play and includes guides for rules and strategy.'
+    a: 'No. You can start a game right away in your browser without creating an account.'
   },
   {
     q: 'Does the game save my progress?',
-    a: 'Your current game is stored locally in your browser so you can continue later on the same device.'
+    a: 'Yes. Your current match is saved locally in your browser so you can resume on the same device.'
   },
   {
-    q: 'Can I practice against the computer?',
-    a: 'Yes. This is built for single-player backgammon practice against a computer opponent.'
+    q: 'Can I play on mobile?',
+    a: 'Yes. The homepage is designed to be usable on phones and tablets for quick practice sessions.'
   }
 ];
 
@@ -25,10 +21,10 @@ export default function HomePage() {
   const webAppJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'Backgammon Local',
+    name: 'Backgammon',
     url: `${SITE_URL}/`,
     description:
-      'Play backgammon online for free against the computer. Backgammon Local runs in your browser, requires no sign-up, and saves progress locally.',
+      'Play backgammon online for free against the computer in your browser. No sign-up, no download, and local save support for quick practice.',
     applicationCategory: 'GameApplication',
     operatingSystem: 'Any',
     offers: {
@@ -41,8 +37,8 @@ export default function HomePage() {
   return (
     <>
       <SEO
-        title="Play Backgammon Online for Free | Backgammon Local"
-        description="Play backgammon online for free in your browser. No sign-up required. Practice against the computer, learn the rules, and improve your strategy."
+        title="Play Backgammon Online Free in Your Browser"
+        description="Play free backgammon online instantly in your browser. Practice against the computer, learn the rules, improve strategy, and explore beginner-friendly guides."
         path="/"
         jsonLd={webAppJsonLd}
       />
@@ -56,129 +52,145 @@ export default function HomePage() {
 
       <article className="content-page home-content-stack">
         <section>
-          <h2>Intro</h2>
+          <h2>Play Backgammon Instantly</h2>
           <p>
-            Welcome to Backgammon Local, a fast way to play backgammon online without creating an account. The board loads directly in
-            your browser, so you can start immediately and focus on the game instead of setup screens.
+            Start playing immediately in your browser with no account setup and no installation steps. The game board above is ready for
+            quick matches whether you want a short break or a longer focused session.
           </p>
           <p>
-            This site is built for players who want free backgammon online with clear controls, beginner-friendly learning resources, and
-            steady single-player practice against the computer.
+            This is free backgammon online designed for clear, game-first play. You can practice against the computer, learn how legal
+            moves work, and build confidence with the flow of turns, hits, and races.
           </p>
           <p>
-            New here? Use the board above first, then continue with our <Link to="/rules">complete backgammon rules</Link>,
-            <Link to="/strategy"> beginner backgammon strategy</Link>, and
-            <Link to="/faq"> frequently asked questions</Link>.
-          </p>
-        </section>
-
-        <section>
-          <h2>Free Online Backgammon</h2>
-          <p>
-            If your goal is to play backgammon free, this site keeps things simple: open, roll, and play. There is no signup, no
-            subscription gate, and no download required to start a game.
+            Your progress is saved locally in the browser on your current device, so you can leave and come back to continue where you
+            stopped. If you want an expanded overview of no-login browser play, visit the{' '}
+            <Link to="/free-backgammon-online">free backgammon online page</Link>.
           </p>
           <p>
-            Because the app runs browser-first, it is convenient for quick sessions during a break or longer practice blocks when you
-            want to improve your decision making. You can return later and continue where you left off because game state is saved locally
-            in the same browser.
-          </p>
-          <p>
-            Looking specifically for no-install play? Visit <Link to="/free-backgammon-online">free backgammon online</Link> for a
-            focused overview.
+            If you are brand new, you can treat this homepage as a simple starting point: play first, then use the short guides below to
+            learn rules, strategy, and common terms at your own pace.
           </p>
         </section>
 
         <section>
           <h2>How to Play Backgammon</h2>
           <p>
-            Backgammon begins with an opening roll: each side rolls one die, and the higher number takes the first turn using both values.
-            Checkers then move according to the dice, and each die must be used legally whenever possible.
+            Backgammon is played by two players moving 15 checkers each around the board. Movement is determined by dice rolls, and the
+            opening roll decides who starts and with which combined numbers.
           </p>
           <p>
-            You can land on open points, points you already occupy, or points with one opposing checker. A single opposing checker is a
-            blot, and landing there hits it to the bar. Any checker on the bar must re-enter before other checkers can move.
+            During play, landing on a single opposing checker hits that blot and sends it to the bar. Checkers on the bar must re-enter
+            before other moves can be made, which makes board control and entry points important.
           </p>
           <p>
-            Once all 15 checkers reach your home board, you can bear off by removing checkers using rolled values. The first player to
-            bear off all checkers wins. For a full walkthrough with examples and common mistakes, read our
-            <Link to="/rules"> complete backgammon rules for beginners</Link>.
-          </p>
-        </section>
-
-        <section>
-          <h2>Play Backgammon Against the Computer</h2>
-          <p>
-            Practicing backgammon vs computer is an efficient way to improve because you can play at your own pace and see many game
-            situations in a short time. It is especially useful when you are learning legal moves and want to reinforce core patterns.
+            After all of your checkers reach the home board, you bear off to remove them from play. The first player to bear off all 15
+            checkers wins. For full rules, edge cases, and examples, <Link to="/rules">read the full backgammon rules</Link>.
           </p>
           <p>
-            Single-player games help you build comfort with transitions: opening development, contact play, racing, and bear-off. You can
-            pause and resume later on the same browser, which makes it easier to fit practice into daily routines.
-          </p>
-          <p>
-            Want structured solo improvement tips? Read our
-            <Link to="/single-player-backgammon"> single-player backgammon practice guide</Link>.
+            The complete guide also explains doubles, forced moves, and practical examples that help beginners avoid common early
+            mistakes.
           </p>
         </section>
 
         <section>
           <h2>Backgammon Strategy Basics</h2>
           <p>
-            Strong beginner strategy starts with safety. Reduce unnecessary blots, especially in range of opposing checkers, and avoid
-            creating easy hitting targets unless the reward is clear.
+            Good early strategy starts with avoiding exposed blots unless there is a clear tactical reason. Safer positions reduce the
+            chances of getting hit and losing tempo.
           </p>
           <p>
-            Build useful points to control space. Made points improve safety, block routes, and can connect into primes that trap opposing
-            back checkers. At the same time, keep track of pip count so you know whether you are racing ahead or need to maintain contact.
+            Build useful points when you can. Made points protect your own checkers, block opposing movement, and can connect into primes
+            that limit re-entry and escape routes.
           </p>
           <p>
-            Choosing when to hit is a key skill. Hitting can gain tempo, but reckless hits can leave your own blots exposed. Better play
-            comes from balancing aggression with board structure and timing. For deeper practical guidance, read
-            <Link to="/strategy"> beginner backgammon strategy tips</Link>.
+            Keep an eye on pip count to judge whether you should race or stay in contact. Choosing when to hit is often about timing:
+            aggressive plays can gain momentum, but overextending can create weak returns. To go deeper,{' '}
+            <Link to="/strategy">read beginner backgammon strategy tips</Link>.
+          </p>
+          <p>
+            As you improve, strategy becomes less about memorizing one pattern and more about comparing risk, timing, and board shape on
+            every roll.
           </p>
         </section>
 
         <section>
-          <h2>Why Play Backgammon Here?</h2>
-          <h3>No account required</h3>
+          <h2>Practice Backgammon Against the Computer</h2>
           <p>
-            You can start a game right away with no registration flow. That keeps the experience friction-free for casual players and
-            repeat practice.
-          </p>
-          <h3>Instant browser play</h3>
-          <p>
-            The game launches directly on the page, with no installation steps. It is quick to access whether you are playing one short
-            game or a full session.
-          </p>
-          <h3>Local save for continuity</h3>
-          <p>
-            Your progress is saved locally in your browser, so you can return later without losing your current board state on that same
-            device.
-          </p>
-          <h3>Simple, readable interface</h3>
-          <p>
-            Clean controls and clear board presentation help beginners focus on core decisions: movement, safety, timing, and race
-            management.
+            Single-player backgammon is useful because you can repeat positions quickly and focus on decisions without waiting for an
+            opponent. It is a practical way to build consistency when learning.
           </p>
           <p>
-            Keep learning with the <Link to="/glossary">backgammon glossary</Link> and
-            <Link to="/free-backgammon-online"> free backgammon online guide</Link>.
+            Regular practice helps you spot legal move patterns faster, handle races more confidently, and improve bear-off choices under
+            different dice outcomes. Quick restarts in the browser make it easy to train in short bursts.
+          </p>
+          <p>
+            For a focused solo-training path, visit the <Link to="/single-player-backgammon">single-player backgammon practice page</Link>.
+          </p>
+          <p>
+            You can use repeated solo sessions to build stronger instincts before playing more competitive matches elsewhere.
+          </p>
+        </section>
+
+        <section>
+          <h2>Backgammon Terms and Concepts</h2>
+          <p>
+            Learning a few core terms makes guides and strategy advice easier to follow. A <strong>blot</strong> is a single checker that
+            can be hit. The <strong>bar</strong> is where hit checkers wait before they re-enter.
+          </p>
+          <p>
+            <strong>Pip count</strong> is the total distance your checkers need to move before bearing off. A <strong>prime</strong> is a
+            row of made points that blocks movement. To <strong>bear off</strong> means removing checkers once all are in your home board.
+          </p>
+          <p>
+            If you want fuller definitions and examples, explore the <Link to="/glossary">complete backgammon glossary</Link>.
+          </p>
+          <p>
+            Understanding this vocabulary will also make rule explanations and strategy tips much easier to follow during real games.
           </p>
         </section>
 
         <section>
           <h2>Frequently Asked Questions</h2>
-          {faqItems.map((item) => (
+          {faqPreviewItems.map((item) => (
             <section key={item.q}>
               <h3>{item.q}</h3>
               <p>{item.a}</p>
             </section>
           ))}
           <p>
-            Need detailed answers about dice, passing turns, entering from the bar, and bearing off? Visit the full
-            <Link to="/faq"> backgammon FAQ page</Link>.
+            For complete answers about turns, legal moves, saving, and gameplay details, visit the{' '}
+            <Link to="/faq">full backgammon FAQ</Link>.
           </p>
+        </section>
+
+        <section>
+          <h2>Learn More About Backgammon</h2>
+          <p>
+            Use these internal guides as a quick navigation hub when you want to jump from live play to deeper learning content.
+          </p>
+          <ul>
+            <li>
+              <Link to="/rules">Backgammon rules and gameplay guide</Link>
+            </li>
+            <li>
+              <Link to="/strategy">Backgammon strategy for beginners</Link>
+            </li>
+            <li>
+              <Link to="/glossary">Backgammon glossary of terms and concepts</Link>
+            </li>
+            <li>
+              <Link to="/single-player-backgammon">Practice backgammon against the computer</Link>
+            </li>
+            <li>
+              <Link to="/faq">Frequently asked questions about backgammon play</Link>
+            </li>
+            <li>
+              <Link to="/about">About this backgammon project</Link>
+            </li>
+            <li>
+              <Link to="/privacy">Privacy and local data details</Link>
+            </li>
+          </ul>
         </section>
       </article>
     </>
