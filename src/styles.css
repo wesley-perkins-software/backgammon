@@ -245,12 +245,6 @@ button:focus-visible {
   padding: 0.35rem 0.25rem;
 }
 
-.tray-label {
-  font-size: 0.63rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.95;
-}
 
 .tray-count {
   font-size: clamp(1.05rem, 2vw, 1.5rem);
@@ -711,6 +705,32 @@ button:focus-visible {
     0 0 8px 0 var(--legal-glow);
 }
 
+@keyframes bearoffGlowPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px #FFD27A,
+      0 0 12px rgba(255, 210, 122, 0.8),
+      0 0 22px rgba(255, 210, 122, 0.6);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 2px #FFD27A,
+      0 0 16px rgba(255, 210, 122, 0.95),
+      0 0 30px rgba(255, 210, 122, 0.72);
+  }
+}
+
+.bearoff-tray.legal,
+.bearoff-tray.is-legal {
+  box-shadow:
+    0 0 0 2px #FFD27A,
+    0 0 12px rgba(255, 210, 122, 0.8),
+    0 0 22px rgba(255, 210, 122, 0.6);
+  animation: bearoffGlowPulse 1.8s ease-in-out infinite;
+}
+
 .board-stage.pending-path-choice .point.path-choice-option,
 .board-stage.pending-path-choice .bearoff-tray.path-choice-option {
   box-shadow:
@@ -734,13 +754,26 @@ button:focus-visible {
     0 0 12px 1px var(--selected-glow);
 }
 
+.bearoff-tray.selected.legal,
+.bearoff-tray.is-selected.is-legal {
+  box-shadow:
+    0 0 0 2px #FFD27A,
+    0 0 12px rgba(255, 210, 122, 0.8),
+    0 0 22px rgba(255, 210, 122, 0.6),
+    0 0 0 3px var(--selected-outline) inset,
+    0 0 12px 1px var(--selected-glow);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .point.selected .checker-stack,
   .point.is-selected .checker-stack,
-  .barForcedSelected .bar-checker:first-child {
+  .barForcedSelected .bar-checker:first-child,
+  .bearoff-tray.legal,
+  .bearoff-tray.is-legal {
     transition: none;
     transform: none;
     will-change: auto;
+    animation: none;
   }
 }
 
@@ -1010,9 +1043,6 @@ button:focus-visible {
     border-width: 1.5px;
   }
 
-  .tray-label {
-    font-size: 0.62rem;
-  }
 
   .tray-count {
     font-size: clamp(0.95rem, 4.2vw, 1.28rem);
