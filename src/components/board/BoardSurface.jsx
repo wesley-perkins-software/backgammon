@@ -107,7 +107,7 @@ function Bar({ game, activeSelectedSource, showMovableSources, movableSourceSet,
 }
 
 function BearOffTray({ label, count, highlighted, pathChoiceIntermediate, onClick, trayRef, className = '' }) {
-  return <button ref={trayRef} type="button" className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${pathChoiceIntermediate ? 'path-choice-option' : ''} ${className}`.trim()} onClick={onClick} aria-label={`${label} bear off`}><span className="tray-label">{label} Off</span><span className="tray-count">{count}</span></button>;
+  return <button ref={trayRef} type="button" className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${pathChoiceIntermediate ? 'path-choice-option' : ''} ${className}`.trim()} onClick={onClick} aria-label={`${label} bear off`}><span className="tray-count">{count}</span></button>;
 }
 
 function BoardRollControl({ canPlayerRoll, onRoll }) {

@@ -243,14 +243,10 @@ button:focus-visible {
   gap: 0.25rem;
   min-height: clamp(64px, 15vw, 86px);
   padding: 0.35rem 0.25rem;
+  position: relative;
+  overflow: visible;
 }
 
-.tray-label {
-  font-size: 0.63rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.95;
-}
 
 .tray-count {
   font-size: clamp(1.05rem, 2vw, 1.5rem);
@@ -711,6 +707,86 @@ button:focus-visible {
     0 0 8px 0 var(--legal-glow);
 }
 
+
+@keyframes bearoffHaloPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes bearoffOuterRingPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bearoffGlowPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px #FFD27A,
+      0 0 0 5px rgba(255, 210, 122, 0.45),
+      0 0 18px rgba(255, 210, 122, 0.85),
+      0 0 34px rgba(255, 210, 122, 0.65);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 2px #FFD27A,
+      0 0 0 6px rgba(255, 210, 122, 0.62),
+      0 0 24px rgba(255, 210, 122, 1),
+      0 0 44px rgba(255, 210, 122, 0.82);
+  }
+}
+
+.bearoff-tray.legal,
+.bearoff-tray.is-legal {
+  box-shadow:
+    0 0 0 2px #FFD27A,
+    0 0 0 5px rgba(255, 210, 122, 0.45),
+    0 0 18px rgba(255, 210, 122, 0.85),
+    0 0 34px rgba(255, 210, 122, 0.65);
+  animation: bearoffGlowPulse 1.8s ease-in-out infinite;
+}
+
+.bearoff-tray.legal::before,
+.bearoff-tray.is-legal::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 3px rgba(255, 210, 122, 0.55);
+  animation: bearoffOuterRingPulse 1.8s ease-in-out infinite;
+}
+
+.bearoff-tray.legal::after,
+.bearoff-tray.is-legal::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 22px rgba(255, 210, 122, 0.75),
+    0 0 42px rgba(255, 210, 122, 0.55);
+  animation: bearoffHaloPulse 1.8s ease-in-out infinite;
+}
+
 .board-stage.pending-path-choice .point.path-choice-option,
 .board-stage.pending-path-choice .bearoff-tray.path-choice-option {
   box-shadow:
@@ -734,13 +810,31 @@ button:focus-visible {
     0 0 12px 1px var(--selected-glow);
 }
 
+.bearoff-tray.selected.legal,
+.bearoff-tray.is-selected.is-legal {
+  box-shadow:
+    0 0 0 2px #FFD27A,
+    0 0 0 5px rgba(255, 210, 122, 0.45),
+    0 0 18px rgba(255, 210, 122, 0.85),
+    0 0 34px rgba(255, 210, 122, 0.65),
+    0 0 0 3px var(--selected-outline) inset,
+    0 0 12px 1px var(--selected-glow);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .point.selected .checker-stack,
   .point.is-selected .checker-stack,
-  .barForcedSelected .bar-checker:first-child {
+  .barForcedSelected .bar-checker:first-child,
+  .bearoff-tray.legal,
+  .bearoff-tray.is-legal,
+  .bearoff-tray.legal::before,
+  .bearoff-tray.is-legal::before,
+  .bearoff-tray.legal::after,
+  .bearoff-tray.is-legal::after {
     transition: none;
     transform: none;
     will-change: auto;
+    animation: none;
   }
 }
 
@@ -1010,9 +1104,6 @@ button:focus-visible {
     border-width: 1.5px;
   }
 
-  .tray-label {
-    font-size: 0.62rem;
-  }
 
   .tray-count {
     font-size: clamp(0.95rem, 4.2vw, 1.28rem);
