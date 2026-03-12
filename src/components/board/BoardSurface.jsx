@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { PLAYER_A, PLAYER_B } from '../../game.js';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
@@ -125,12 +124,6 @@ export default function BoardSurface(props) {
     canPlayerRoll, handleRoll
   } = props;
 
-  const pathPromptRef = useRef(null);
-
-  useEffect(() => {
-    if (pendingPathChoices && pathPromptRef.current) pathPromptRef.current.focus();
-  }, [pendingPathChoices]);
-
   const renderPoint = (point, isTop) => <Point key={point} index={point} value={game.points[point]} isTop={isTop} pointRef={(node) => {
     if (node) pointRefs.current.set(point, node);
     else pointRefs.current.delete(point);
@@ -148,22 +141,9 @@ export default function BoardSurface(props) {
   return (
     <section ref={boardStageRef} className={`board-stage ${pendingPathChoices ? 'pending-path-choice' : ''}`.trim()} aria-label="Backgammon board" onClick={(event) => {
       if (!pendingPathChoices) return;
-      if (event.target.closest('.path-choice-prompt')) return;
       if (event.target.closest('.point.legal, .bearoff-tray.legal')) return;
       cancelPendingPathChoice();
     }}>
-      {pendingPathChoices && (
-        <section
-          className="path-choice-prompt"
-          role="dialog"
-          aria-live="polite"
-          aria-label="Choose your path"
-          tabIndex={-1}
-          ref={pathPromptRef}
-        >
-          <p>Choose intermediate step</p>
-        </section>
-      )}
       <div className="game-layout">
         <div className="pip-row" aria-label="Pip counts">
           <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}><span className="pip-box-label">Computer</span><span className="pip-box-value">PIP: {computerPipCount}</span><span className="pip-box-meta">Bar: {game.bar.B}</span></div>

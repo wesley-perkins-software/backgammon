@@ -44,6 +44,7 @@ describe('move path ambiguity detection', () => {
     const result = analyzePathChoices([optionA, optionB]);
     expect(result.shouldPrompt).toBe(true);
     expect(result.uniqueOutcomeCount).toBe(2);
+    expect(result.promptMessage).toBe('Choose which blot to hit');
   });
 
   it('Case B: no prompt when both legal paths have no hits and same board outcome', () => {
@@ -66,6 +67,7 @@ describe('move path ambiguity detection', () => {
     const result = analyzePathChoices([optionA, optionB]);
     expect(result.shouldPrompt).toBe(false);
     expect(result.uniqueOutcomeCount).toBe(1);
+    expect(result.promptMessage).toBeNull();
   });
 
   it('Case C: no prompt when both legal paths produce same hit outcome', () => {

@@ -136,9 +136,19 @@ export default function useGameController({ clock = defaultClock, media = defaul
   }, [game, moveOptionsForSelected, chainOptionsForSelected]);
   const destinationSet = useMemo(() => {
     if (isAnyRollAnimationRunning) return new Set();
-    if (pendingPathChoices) return new Set(pendingPathChoices.intermediateMap.keys());
+    if (pendingPathChoices) {
+      const destinations = new Set(pendingPathChoices.intermediateMap.keys());
+      destinations.add(destinationKey(pendingPathChoices.finalTo));
+      return destinations;
+    }
     return new Set(destinationOptionsForSelected.map((option) => destinationKey(option.to)));
   }, [destinationOptionsForSelected, isAnyRollAnimationRunning, pendingPathChoices]);
+
+  const statusMessage = useMemo(() => {
+    if (gamePhase === 'OPENING_ROLL') return openingMessage;
+    if (pendingPathChoices) return pendingPathChoices.promptMessage;
+    return game.statusText;
+  }, [game.statusText, gamePhase, openingMessage, pendingPathChoices]);
 
   const movableSourceSet = useMemo(() => new Set(legalMoves.map((move) => sourceKey(move.from))), [legalMoves]);
   const showMovableSources = !isAnyRollAnimationRunning && !isAnimatingMove && !isComputerTurn && !game.winner && game.dice.remaining.length > 0;
@@ -328,6 +338,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
       setPendingPathChoices({
         from: activeSelectedSource,
         finalTo: destination,
+        promptMessage: analysis.promptMessage,
         options: analysis.promptOptions,
         intermediateMap: analysis.intermediateMap
       });
@@ -500,7 +511,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   }, [game, isComputerTurn, isAnimatingMove, isAnyRollAnimationRunning]);
 
   return {
-    game, gamePhase, openingMessage, playerPipCount, computerPipCount, canPlayerRoll, isComputerTurn, isAnimatingMove,
+    game, gamePhase, openingMessage, statusMessage, playerPipCount, computerPipCount, canPlayerRoll, isComputerTurn, isAnimatingMove,
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
     pendingPathChoices,

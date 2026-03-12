@@ -88,6 +88,31 @@ function buildDoubleOnesChainScenario() {
   };
 }
 
+function buildAmbiguousPathScenario() {
+  const points = Array(24).fill(0);
+  // Source checker at point 11. Final destination point 8 can be reached via point 10 or point 9.
+  // A blot on each intermediate creates meaningful ambiguity about which blot gets hit.
+  points[10] = 1;
+  points[9] = -1;
+  points[8] = -1;
+
+  return {
+    version: SCHEMA_VERSION,
+    points,
+    bar: { A: 0, B: 0 },
+    bearOff: { A: 0, B: 0 },
+    currentPlayer: PLAYER_A,
+    phase: 'playing',
+    dice: { values: [1, 2], remaining: [1, 2] },
+    winner: null,
+    openingRollPending: false,
+    openingRoll: { player: 6, computer: 1, status: 'done' },
+    undoStack: [],
+    statusText: 'Player rolled 1 and 2.',
+    dev: { debugOpen: false, dieA: 1, dieB: 1 }
+  };
+}
+
 function seedState(state) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -231,5 +256,28 @@ describe('App move selection', () => {
     ]);
 
     applyMoveSpy.mockRestore();
+  });
+
+  it('keeps final destination highlighted during path choice and shows guidance in status area', async () => {
+    seedState(buildAmbiguousPathScenario());
+    const user = userEvent.setup();
+    render(<App showSeo={false} showHeader={false} />);
+
+    const source = screen.getByRole('button', { name: 'Point 11' });
+    const finalDestination = screen.getByRole('button', { name: 'Point 8' });
+    const intermediateA = screen.getByRole('button', { name: 'Point 10' });
+    const intermediateB = screen.getByRole('button', { name: 'Point 9' });
+
+    await user.click(source);
+    await user.click(finalDestination);
+
+    expect(finalDestination).toHaveClass('legal');
+    expect(intermediateA).toHaveClass('legal');
+    expect(intermediateB).toHaveClass('legal');
+    expect(screen.queryByRole('dialog', { name: 'Choose your path' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Choose which blot to hit').at(-1)).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(screen.getAllByText('Player rolled 1 and 2.').at(-1)).toBeInTheDocument();
   });
 });
