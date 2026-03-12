@@ -30,7 +30,7 @@ export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Ba
       <BoardSurface {...controller} />
 
       {controller.toastMessage && <section className="roll-toast" aria-live="polite">{controller.toastMessage}</section>}
-      <section className="roll-toast" aria-live="polite">{controller.gamePhase === 'OPENING_ROLL' ? controller.openingMessage : controller.game.statusText}</section>
+      <section className="roll-toast" aria-live="polite">{controller.statusMessage}</section>
 
       <ControlsPanel
         isAnimatingMove={controller.isAnimatingMove}

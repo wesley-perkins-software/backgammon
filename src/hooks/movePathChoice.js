@@ -84,6 +84,7 @@ export function analyzePathChoices(options) {
       legalSequenceCount: 0,
       uniqueOutcomeCount: 0,
       shouldPrompt: false,
+      promptMessage: null,
       chosenOption: null,
       promptOptions: [],
       intermediateMap: new Map()
@@ -99,6 +100,7 @@ export function analyzePathChoices(options) {
       legalSequenceCount: orderedOptions.length,
       uniqueOutcomeCount: uniqueOutcomeSignatures.size,
       shouldPrompt: false,
+      promptMessage: null,
       chosenOption: orderedOptions[0],
       promptOptions: [],
       intermediateMap: new Map()
@@ -106,7 +108,8 @@ export function analyzePathChoices(options) {
   }
 
   const blotMap = buildDifferingBlotChoiceMap(orderedOptions);
-  const intermediateMap = blotMap.size > 1 ? blotMap : buildIntermediateChoiceMap(orderedOptions);
+  const isBlotChoice = blotMap.size > 1;
+  const intermediateMap = isBlotChoice ? blotMap : buildIntermediateChoiceMap(orderedOptions);
   const promptOptions = orderedOptions.map((option, index) => ({
     id: index,
     label: option.choiceLabel,
@@ -117,6 +120,7 @@ export function analyzePathChoices(options) {
     legalSequenceCount: orderedOptions.length,
     uniqueOutcomeCount: uniqueOutcomeSignatures.size,
     shouldPrompt: true,
+    promptMessage: isBlotChoice ? 'Choose which blot to hit' : 'Choose the intermediate step',
     chosenOption: null,
     promptOptions,
     intermediateMap
