@@ -217,7 +217,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
       return { ...prev, statusText: noMovesMessage };
     });
     const timer = clock.setTimeout(() => {
-      setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_A || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 || computeLegalMoves(prev).length !== 0 ? prev : pushUndoState(prev, endTurn(prev, `Player rolled ${prev.dice.values[0]} and ${prev.dice.values[1]}. No legal moves. Turn passed to computer.`)));
+      setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_A || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 || computeLegalMoves(prev).length !== 0 ? prev : pushUndoState(prev, endTurn(prev)));
       setPlayerTurnPhase('NEED_ROLL');
     }, PLAYER_NO_MOVES_NOTICE_MS);
     return () => clock.clearTimeout(timer);

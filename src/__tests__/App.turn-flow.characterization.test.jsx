@@ -95,6 +95,7 @@ describe('App turn-flow characterization', () => {
     expect(screen.queryByText(/Computer rolled/i)).not.toBeInTheDocument();
 
     await vi.advanceTimersByTimeAsync(100);
-    expect(screen.getByText(/Turn passed to computer\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Turn passed to computer\./i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Computer to move\. Roll dice\./i)).toBeInTheDocument();
   });
 });
