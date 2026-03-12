@@ -95,19 +95,19 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, rollingDiceValues, r
   );
 }
 
-function Point({ index, value, selected, highlighted, movable, onClick, isTop, pointRef }) {
+function Point({ index, value, selected, highlighted, pathChoiceIntermediate, movable, onClick, isTop, pointRef }) {
   const owner = pointOwner(value);
   const count = checkerCount(value);
   const stackDivisor = Math.max(4, count - 1);
-  return <button ref={pointRef} className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${movable ? 'movable-source' : ''}`} onClick={onClick} aria-label={`Point ${index + 1}`} type="button"><div className={`checker-stack ${isTop ? 'stack-top' : 'stack-bottom'}`}>{Array.from({ length: count }).map((_, i) => <span key={i} className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movable && i === count - 1 ? 'checker-movable' : ''}`} style={{ '--stack-index': i, '--stack-offset': i / stackDivisor, zIndex: count - i }} />)}</div></button>;
+  return <button ref={pointRef} className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${pathChoiceIntermediate ? 'path-choice-option' : ''} ${movable ? 'movable-source' : ''}`} onClick={onClick} aria-label={`Point ${index + 1}`} type="button"><div className={`checker-stack ${isTop ? 'stack-top' : 'stack-bottom'}`}>{Array.from({ length: count }).map((_, i) => <span key={i} className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movable && i === count - 1 ? 'checker-movable' : ''}`} style={{ '--stack-index': i, '--stack-offset': i / stackDivisor, zIndex: count - i }} />)}</div></button>;
 }
 
 function Bar({ game, activeSelectedSource, showMovableSources, movableSourceSet, destinationSet, onSelectBar, barRef }) {
   return <div className="bar-lane-wrap"><button ref={barRef} className={`bar-column ${destinationSet.has('bar') ? 'legal is-legal' : ''} ${showMovableSources && movableSourceSet.has('bar') ? 'movable-source' : ''}`} onClick={() => {}} type="button" aria-label="Bar"><div className="bar-seam" aria-hidden="true" /></button><div className="bar-checker-overlay" aria-hidden="true"><div className="barStackTop" aria-hidden="true">{Array.from({ length: game.bar.B }).map((_, i) => <span key={`b-${i}`} className="checker checker-b bar-checker" style={{ zIndex: game.bar.B - i }} />)}</div><div className={`barStackBottom ${activeSelectedSource === 'bar' ? 'barForcedSelected' : ''}`} aria-hidden="true">{Array.from({ length: game.bar.A }).map((_, i) => i === 0 ? <button key={`a-${i}`} type="button" className={`checker checker-a bar-checker ${activeSelectedSource === 'bar' ? 'barCheckerSelected' : ''} ${showMovableSources && movableSourceSet.has('bar') ? 'checker-movable' : ''} barCheckerInteractive bar-checker-button`} style={{ zIndex: game.bar.A - i }} onClick={onSelectBar} aria-label="Select checker on bar" /> : <span key={`a-${i}`} className={`checker checker-a bar-checker ${activeSelectedSource === 'bar' ? 'barCheckerSelected' : ''}`} style={{ zIndex: game.bar.A - i }} />)}</div></div></div>;
 }
 
-function BearOffTray({ label, count, highlighted, onClick, trayRef, className = '' }) {
-  return <button ref={trayRef} type="button" className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${className}`.trim()} onClick={onClick} aria-label={`${label} bear off`}><span className="tray-label">{label} Off</span><span className="tray-count">{count}</span></button>;
+function BearOffTray({ label, count, highlighted, pathChoiceIntermediate, onClick, trayRef, className = '' }) {
+  return <button ref={trayRef} type="button" className={`bearoff-tray ${highlighted ? 'legal is-legal' : ''} ${pathChoiceIntermediate ? 'path-choice-option' : ''} ${className}`.trim()} onClick={onClick} aria-label={`${label} bear off`}><span className="tray-label">{label} Off</span><span className="tray-count">{count}</span></button>;
 }
 
 function BoardRollControl({ canPlayerRoll, onRoll }) {
@@ -117,7 +117,7 @@ function BoardRollControl({ canPlayerRoll, onRoll }) {
 export default function BoardSurface(props) {
   const {
     boardStageRef, pointRefs, bearOffRefs, barRef, game, gamePhase, openingMessage, playerPipCount, computerPipCount,
-    isComputerTurn, activeSelectedSource, destinationSet, movableSourceSet, showMovableSources,
+    isComputerTurn, activeSelectedSource, destinationSet, pendingIntermediateSet, movableSourceSet, showMovableSources,
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
     pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice,
@@ -127,7 +127,7 @@ export default function BoardSurface(props) {
   const renderPoint = (point, isTop) => <Point key={point} index={point} value={game.points[point]} isTop={isTop} pointRef={(node) => {
     if (node) pointRefs.current.set(point, node);
     else pointRefs.current.delete(point);
-  }} selected={activeSelectedSource === point} highlighted={destinationSet.has(String(point))} movable={showMovableSources && movableSourceSet.has(String(point))} onClick={() => {
+  }} selected={activeSelectedSource === point} highlighted={destinationSet.has(String(point))} pathChoiceIntermediate={pendingIntermediateSet.has(String(point))} movable={showMovableSources && movableSourceSet.has(String(point))} onClick={() => {
     if (isAnimatingMove || isComputerTurn) return;
     if (pendingPathChoices) {
       if (destinationSet.has(String(point))) chooseIntermediatePath(point);
@@ -162,11 +162,11 @@ export default function BoardSurface(props) {
           <BoardDice game={game} side="right" diceAnimKey={diceAnimKey} isBoardDiceRolling={isAnyRollAnimationRunning} rollingDiceValues={pendingRoll?.values ?? null} rollingAnimatedMask={pendingRoll?.animatedMask ?? null} disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling} />
         </div>
         <aside className="home-rail" aria-label="Bear off area">
-          <BearOffTray label="Computer" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} onClick={() => {
+          <BearOffTray label="Computer" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
             if (pendingPathChoices) return cancelPendingPathChoice();
             if (!isAnimatingMove && !isComputerTurn) moveToDestination('off');
           }} />
-          <BearOffTray label="Player" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} onClick={() => {
+          <BearOffTray label="Player" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
             if (pendingPathChoices) return cancelPendingPathChoice();
             if (!isAnimatingMove && !isComputerTurn) moveToDestination('off');
           }} />

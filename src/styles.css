@@ -711,10 +711,8 @@ button:focus-visible {
     0 0 8px 0 var(--legal-glow);
 }
 
-.board-stage.pending-path-choice .point.legal,
-.board-stage.pending-path-choice .point.is-legal,
-.board-stage.pending-path-choice .bearoff-tray.legal,
-.board-stage.pending-path-choice .bearoff-tray.is-legal {
+.board-stage.pending-path-choice .point.path-choice-option,
+.board-stage.pending-path-choice .bearoff-tray.path-choice-option {
   box-shadow:
     0 0 0 2px rgba(92, 214, 127, 0.95) inset,
     0 0 12px 0 rgba(92, 214, 127, 0.35);

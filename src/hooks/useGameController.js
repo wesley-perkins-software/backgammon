@@ -144,6 +144,12 @@ export default function useGameController({ clock = defaultClock, media = defaul
     return new Set(destinationOptionsForSelected.map((option) => destinationKey(option.to)));
   }, [destinationOptionsForSelected, isAnyRollAnimationRunning, pendingPathChoices]);
 
+  const pendingIntermediateSet = useMemo(() => (
+    pendingPathChoices
+      ? new Set(pendingPathChoices.intermediateMap.keys())
+      : new Set()
+  ), [pendingPathChoices]);
+
   const statusMessage = useMemo(() => {
     if (gamePhase === 'OPENING_ROLL') return openingMessage;
     if (pendingPathChoices) return pendingPathChoices.promptMessage;
@@ -514,7 +520,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     game, gamePhase, openingMessage, statusMessage, playerPipCount, computerPipCount, canPlayerRoll, isComputerTurn, isAnimatingMove,
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
-    pendingPathChoices,
+    pendingPathChoices, pendingIntermediateSet,
     boardStageRef, pointRefs, barRef, bearOffRefs,
     handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie

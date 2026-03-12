@@ -274,6 +274,9 @@ describe('App move selection', () => {
     expect(finalDestination).toHaveClass('legal');
     expect(intermediateA).toHaveClass('legal');
     expect(intermediateB).toHaveClass('legal');
+    expect(finalDestination).not.toHaveClass('path-choice-option');
+    expect(intermediateA).toHaveClass('path-choice-option');
+    expect(intermediateB).toHaveClass('path-choice-option');
     expect(screen.queryByRole('dialog', { name: 'Choose your path' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Choose which blot to hit').at(-1)).toBeInTheDocument();
 
