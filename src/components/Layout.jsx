@@ -24,6 +24,8 @@ export default function Layout({ children }) {
           <NavLink to="/single-player-backgammon">Single Player</NavLink>
           <NavLink to="/free-backgammon-online">Free Backgammon</NavLink>
           <NavLink to="/about">About</NavLink>
+          <NavLink to="/contact">Contact</NavLink>
+          <NavLink to="/terms">Terms of Service</NavLink>
           <NavLink to="/privacy">Privacy</NavLink>
           <NavLink to="/changelog">Changelog</NavLink>
         </nav>
