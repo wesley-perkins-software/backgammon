@@ -199,16 +199,17 @@ button:focus-visible {
 
 .board-stage {
   position: relative;
-  margin-top: 0.55rem;
+  margin-top: 0.35rem;
 }
 
 .game-layout {
   display: grid;
   grid-template-columns: 1fr minmax(90px, 110px);
   grid-template-rows: auto 1fr;
-  row-gap: 0.35rem;
+  row-gap: 0.5rem;
   column-gap: clamp(0.38rem, 0.7vw, 0.6rem);
   align-items: start;
+  min-width: 0;
 }
 
 .pip-row {
@@ -216,8 +217,9 @@ button:focus-visible {
   grid-row: 1;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .home-rail {
@@ -297,48 +299,57 @@ button:focus-visible {
 }
 
 .pip-box {
-  width: clamp(220px, 23vw, 260px);
-  min-height: clamp(72px, 9vh, 92px);
+  width: clamp(150px, 19vw, 190px);
+  min-height: clamp(48px, 6.5vh, 64px);
   min-width: 0;
-  border-radius: 0.8rem;
+  border-radius: 0.72rem;
   border: 2px solid #5b3f2b;
   background: linear-gradient(180deg, #E6D4B3, #D4B892);
   color: #2a2219;
   box-shadow:
-    inset 0 3px 6px rgba(0, 0, 0, 0.2),
-    0 5px 10px rgba(31, 18, 8, 0.22);
-  padding: 0.45rem 0.75rem;
+    inset 0 1px 3px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(31, 18, 8, 0.16);
+  padding: 0.32rem 0.65rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.1rem;
   text-align: center;
 }
 
 .pip-box-active {
-  border: 2px solid #3E86FF;
+  border-color: #3E86FF;
   box-shadow:
-    inset 0 3px 6px rgba(0, 0, 0, 0.2),
-    0 5px 10px rgba(31, 18, 8, 0.22),
-    0 0 5px rgba(62, 134, 255, 0.3);
+    inset 0 1px 3px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(31, 18, 8, 0.16),
+    0 0 3px rgba(62, 134, 255, 0.2);
 }
 
 .pip-box-label {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  line-height: 1;
   opacity: 0.9;
 }
 
+.pip-box-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  line-height: 1;
+}
+
 .pip-box-value {
-  font-size: clamp(1.625rem, 2.4vw, 2.125rem);
+  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
   font-weight: 800;
   line-height: 0.95;
 }
 
 .pip-box-unit {
-  font-size: 0.66rem;
+  font-size: 0.63rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -969,15 +980,16 @@ button:focus-visible {
 
 @media (max-width: 760px) {
   .pip-row {
-    flex-wrap: wrap;
-    align-items: stretch;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
   }
 
   .pip-box {
-    flex: 1 1 220px;
+    width: clamp(140px, 44vw, 170px);
     min-width: 0;
-    min-height: clamp(64px, 15vw, 78px);
-    padding: 0.38rem 0.62rem;
+    min-height: clamp(44px, 10vw, 56px);
+    padding: 0.3rem 0.55rem;
   }
 
   .app {
@@ -1067,20 +1079,30 @@ button:focus-visible {
 }
 
 @media (max-width: 560px) {
+  .pip-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
   .pip-box {
-    flex-basis: 100%;
+    width: min(100%, 170px);
     border-width: 1.5px;
     border-radius: 0.58rem;
-    min-height: clamp(64px, 18vw, 74px);
-    padding: 0.34rem 0.5rem;
+    min-height: clamp(44px, 12vw, 54px);
+    padding: 0.32rem 0.5rem;
   }
 
   .pip-box-label {
-    font-size: 0.69rem;
+    font-size: 0.62rem;
   }
 
   .pip-box-value {
-    font-size: clamp(1.625rem, 8.8vw, 1.95rem);
+    font-size: clamp(1.38rem, 6.4vw, 1.6rem);
+  }
+
+  .pip-box-unit {
+    font-size: 0.6rem;
   }
 
   :root {
