@@ -1,4 +1,5 @@
 import { PLAYER_A, PLAYER_B } from '../../game.js';
+import ControlsPanel from './ControlsPanel.jsx';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
 const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
@@ -124,7 +125,8 @@ export default function BoardSurface(props) {
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
     pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice,
-    canPlayerRoll, handleRoll, handleNewGame, isEndGameOverlayOpen, closeEndGameOverlay
+    canPlayerRoll, handleRoll, handleNewGame, handleUndo,
+    toastMessage, statusMessage, isEndGameOverlayOpen, closeEndGameOverlay
   } = props;
 
   const winnerCopy = game.winner === PLAYER_A
@@ -158,38 +160,60 @@ export default function BoardSurface(props) {
       cancelPendingPathChoice();
     }}>
       <div className={`game-layout ${isEndGameOverlayOpen ? 'game-layout-overlay-open' : ''}`.trim()}>
-        <div className="pip-row" aria-label="Pip counts">
-          <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
-            <span className="pip-box-label">Computer</span>
-            <span className="pip-box-value">{computerPipCount}</span>
-          </div>
-          <div className={`pip-box pip-box-player ${!game.winner && !isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
-            <span className="pip-box-label">Player</span>
-            <span className="pip-box-value">{playerPipCount}</span>
+        <div className="pip-row-wrap">
+          <div className="pip-row" aria-label="Pip counts">
+            <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
+              <span className="pip-box-label">Computer</span>
+              <span className="pip-box-value">{computerPipCount}</span>
+            </div>
+            <div className={`pip-box pip-box-player ${!game.winner && !isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
+              <span className="pip-box-label">Player</span>
+              <span className="pip-box-value">{playerPipCount}</span>
+            </div>
           </div>
         </div>
-        <div className="board-surface">
-          <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
-          <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
-          <Bar game={game} activeSelectedSource={activeSelectedSource} showMovableSources={showMovableSources} movableSourceSet={movableSourceSet} destinationSet={destinationSet} onSelectBar={() => {
-            if (pendingPathChoices) return cancelPendingPathChoice();
-            if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) handleSelectSource('bar');
-          }} barRef={barRef} />
-          <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
-          <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
-          <BoardRollControl canPlayerRoll={canPlayerRoll} onRoll={handleRoll} />
-          <BoardDice game={game} side="right" diceAnimKey={diceAnimKey} isBoardDiceRolling={isAnyRollAnimationRunning} rollingDiceValues={pendingRoll?.values ?? null} rollingAnimatedMask={pendingRoll?.animatedMask ?? null} disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling} />
+
+        <div className="board-row">
+          <div className="board-wrapper">
+            <div className="board-surface">
+              <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
+              <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
+              <Bar game={game} activeSelectedSource={activeSelectedSource} showMovableSources={showMovableSources} movableSourceSet={movableSourceSet} destinationSet={destinationSet} onSelectBar={() => {
+                if (pendingPathChoices) return cancelPendingPathChoice();
+                if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) handleSelectSource('bar');
+              }} barRef={barRef} />
+              <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
+              <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
+              <BoardRollControl canPlayerRoll={canPlayerRoll} onRoll={handleRoll} />
+              <BoardDice game={game} side="right" diceAnimKey={diceAnimKey} isBoardDiceRolling={isAnyRollAnimationRunning} rollingDiceValues={pendingRoll?.values ?? null} rollingAnimatedMask={pendingRoll?.animatedMask ?? null} disableUsedStyling={isAnyRollAnimationRunning || disableUsedDiceStyling} />
+            </div>
+          </div>
+
+          <aside className="home-rail" aria-label="Bear off area">
+            <BearOffTray label="Computer" title="COMPUTER OFF" checkerIcon="⚫" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
+              if (pendingPathChoices) return cancelPendingPathChoice();
+              if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
+            }} />
+            <BearOffTray label="Player" title="PLAYER OFF" checkerIcon="⚪" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
+              if (pendingPathChoices) return cancelPendingPathChoice();
+              if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
+            }} />
+          </aside>
         </div>
-        <aside className="home-rail" aria-label="Bear off area">
-          <BearOffTray label="Computer" title="COMPUTER OFF" checkerIcon="⚫" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
-            if (pendingPathChoices) return cancelPendingPathChoice();
-            if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
-          }} />
-          <BearOffTray label="Player" title="PLAYER OFF" checkerIcon="⚪" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
-            if (pendingPathChoices) return cancelPendingPathChoice();
-            if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
-          }} />
-        </aside>
+
+        <div className={`board-ui-row ${isEndGameOverlayOpen ? 'board-centered-status-controls-hidden' : ''}`.trim()}>
+          <div className="board-centered-status-controls">
+            {toastMessage && <section className="roll-toast" aria-live="polite">{toastMessage}</section>}
+            <section className="roll-toast" aria-live="polite">{statusMessage}</section>
+            <ControlsPanel
+              isAnimatingMove={isAnimatingMove}
+              isAnyRollAnimationRunning={isAnyRollAnimationRunning}
+              undoCount={game.undoStack.length}
+              onNewGame={handleNewGame}
+              onUndo={handleUndo}
+            />
+          </div>
+        </div>
       </div>
       {isEndGameOverlayOpen && game.winner && (
         <div className="endgame-overlay" role="dialog" aria-modal="true" aria-label="Game over">
