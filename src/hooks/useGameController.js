@@ -51,6 +51,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   const [toastMessage, setToastMessage] = useState(null);
   const [playerTurnPhase, setPlayerTurnPhase] = useState('NEED_ROLL');
   const [pendingPathChoices, setPendingPathChoices] = useState(null);
+  const [isEndGameOverlayOpen, setIsEndGameOverlayOpen] = useState(false);
 
   const boardStageRef = useRef(null);
   const pointRefs = useRef(new Map());
@@ -164,6 +165,9 @@ export default function useGameController({ clock = defaultClock, media = defaul
   useEffect(() => { saveGameState(game, storage); }, [game, storage]);
   useEffect(() => { if (selectedSource != null && !movesBySource.has(sourceKey(selectedSource))) setSelectedSource(null); }, [movesBySource, selectedSource]);
   useEffect(() => { setPendingPathChoices(null); }, [selectedSource, game]);
+  useEffect(() => {
+    setIsEndGameOverlayOpen(Boolean(game.winner));
+  }, [game.winner]);
   useEffect(() => {
     if (!pendingPathChoices) return undefined;
     const onEscape = (event) => {
@@ -477,23 +481,30 @@ export default function useGameController({ clock = defaultClock, media = defaul
   function handleNewGame() {
     if (isAnimatingMove) return;
     resetFlowState();
+    setIsEndGameOverlayOpen(false);
     setGame((prev) => pushUndoState(prev, createInitialState()));
   }
   function handleResetPosition() {
     if (isAnimatingMove) return;
     resetFlowState();
+    setIsEndGameOverlayOpen(false);
     setGame((prev) => pushUndoState(prev, { ...createInitialState(), undoStack: prev.undoStack, dev: prev.dev }));
   }
   function handleUndo() {
     if (isAnimatingMove) return;
     resetFlowState();
+    setIsEndGameOverlayOpen(false);
     setGame((prev) => undo(prev));
   }
   function clearSavedGame() {
     if (isAnimatingMove) return;
     resetFlowState();
+    setIsEndGameOverlayOpen(false);
     clearSavedGameState(storage);
     setGame(createInitialState());
+  }
+  function closeEndGameOverlay() {
+    setIsEndGameOverlayOpen(false);
   }
   function updateDebugDie(key, value) {
     const n = Math.max(1, Math.min(6, Number(value) || 1));
@@ -612,9 +623,9 @@ export default function useGameController({ clock = defaultClock, media = defaul
     game, gamePhase, openingMessage, statusMessage, playerPipCount, computerPipCount, canPlayerRoll, isComputerTurn, isAnimatingMove,
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
-    pendingPathChoices, pendingIntermediateSet,
+    pendingPathChoices, pendingIntermediateSet, isEndGameOverlayOpen,
     boardStageRef, pointRefs, barRef, bearOffRefs,
-    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
+    handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, closeEndGameOverlay, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie
   };
 }

@@ -124,14 +124,24 @@ export default function BoardSurface(props) {
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
     pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice,
-    canPlayerRoll, handleRoll
+    canPlayerRoll, handleRoll, handleNewGame, isEndGameOverlayOpen, closeEndGameOverlay
   } = props;
+
+  const winnerCopy = game.winner === PLAYER_A
+    ? {
+      title: 'You win!',
+      subtitle: 'You bore off all 15 checkers first.'
+    }
+    : {
+      title: 'Computer wins',
+      subtitle: 'The computer bore off all 15 checkers first.'
+    };
 
   const renderPoint = (point, isTop) => <Point key={point} index={point} value={game.points[point]} isTop={isTop} pointRef={(node) => {
     if (node) pointRefs.current.set(point, node);
     else pointRefs.current.delete(point);
   }} selected={activeSelectedSource === point} highlighted={destinationSet.has(String(point))} pathChoiceIntermediate={pendingIntermediateSet.has(String(point))} movable={showMovableSources && movableSourceSet.has(String(point))} onClick={() => {
-    if (isAnimatingMove || isComputerTurn) return;
+    if (isEndGameOverlayOpen || isAnimatingMove || isComputerTurn) return;
     if (pendingPathChoices) {
       if (destinationSet.has(String(point))) chooseIntermediatePath(point);
       else cancelPendingPathChoice();
@@ -143,11 +153,11 @@ export default function BoardSurface(props) {
 
   return (
     <section ref={boardStageRef} className={`board-stage ${pendingPathChoices ? 'pending-path-choice' : ''}`.trim()} aria-label="Backgammon board" onClick={(event) => {
-      if (!pendingPathChoices) return;
+      if (isEndGameOverlayOpen || !pendingPathChoices) return;
       if (event.target.closest('.point.legal, .bearoff-tray.legal')) return;
       cancelPendingPathChoice();
     }}>
-      <div className="game-layout">
+      <div className={`game-layout ${isEndGameOverlayOpen ? 'game-layout-overlay-open' : ''}`.trim()}>
         <div className="pip-row" aria-label="Pip counts">
           <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
             <span className="pip-box-label">Computer</span>
@@ -163,7 +173,7 @@ export default function BoardSurface(props) {
           <div className="point-band top-band top-right-band">{TOP_RIGHT.map((point) => renderPoint(point, true))}</div>
           <Bar game={game} activeSelectedSource={activeSelectedSource} showMovableSources={showMovableSources} movableSourceSet={movableSourceSet} destinationSet={destinationSet} onSelectBar={() => {
             if (pendingPathChoices) return cancelPendingPathChoice();
-            if (!isAnimatingMove && !isComputerTurn) handleSelectSource('bar');
+            if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) handleSelectSource('bar');
           }} barRef={barRef} />
           <div className="point-band bottom-band bottom-left-band">{BOTTOM_LEFT.map((point) => renderPoint(point, false))}</div>
           <div className="point-band bottom-band bottom-right-band">{BOTTOM_RIGHT.map((point) => renderPoint(point, false))}</div>
@@ -173,14 +183,26 @@ export default function BoardSurface(props) {
         <aside className="home-rail" aria-label="Bear off area">
           <BearOffTray label="Computer" title="COMPUTER OFF" checkerIcon="⚫" className="home-top" trayRef={(node) => { bearOffRefs.current.B = node; }} count={game.bearOff.B} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_B} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
             if (pendingPathChoices) return cancelPendingPathChoice();
-            if (!isAnimatingMove && !isComputerTurn) moveToDestination('off');
+            if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
           }} />
           <BearOffTray label="Player" title="PLAYER OFF" checkerIcon="⚪" className="home-bottom" trayRef={(node) => { bearOffRefs.current.A = node; }} count={game.bearOff.A} highlighted={destinationSet.has('off') && game.currentPlayer === PLAYER_A} pathChoiceIntermediate={pendingIntermediateSet.has('off')} onClick={() => {
             if (pendingPathChoices) return cancelPendingPathChoice();
-            if (!isAnimatingMove && !isComputerTurn) moveToDestination('off');
+            if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
           }} />
         </aside>
       </div>
+      {isEndGameOverlayOpen && game.winner && (
+        <div className="endgame-overlay" role="dialog" aria-modal="true" aria-label="Game over">
+          <div className="endgame-overlay-card">
+            <h2>{winnerCopy.title}</h2>
+            <p>{winnerCopy.subtitle}</p>
+            <div className="endgame-overlay-actions">
+              <button type="button" className="button-primary" onClick={handleNewGame}>Play Again</button>
+              <button type="button" className="button-secondary" onClick={closeEndGameOverlay}>Review Board</button>
+            </div>
+          </div>
+        </div>
+      )}
       {movingChecker && <span aria-hidden="true" className={`checker moving-checker checker-${movingChecker.player === 'B' ? 'b' : 'a'}`} style={{ left: `${movingChecker.x}px`, top: `${movingChecker.y}px`, '--move-step-ms': `${moveStepMs}ms` }} />}
     </section>
   );
