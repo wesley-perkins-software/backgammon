@@ -199,14 +199,14 @@ button:focus-visible {
 
 .board-stage {
   position: relative;
-  margin-top: 1rem;
+  margin-top: 0.55rem;
 }
 
 .game-layout {
   display: grid;
   grid-template-columns: 1fr minmax(90px, 110px);
   grid-template-rows: auto 1fr;
-  row-gap: 0.75rem;
+  row-gap: 0.35rem;
   column-gap: clamp(0.38rem, 0.7vw, 0.6rem);
   align-items: start;
 }
@@ -217,7 +217,7 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .home-rail {
@@ -297,49 +297,52 @@ button:focus-visible {
 }
 
 .pip-box {
-  min-width: clamp(156px, 22vw, 210px);
-  border-radius: 0.72rem;
-  border: 2px solid #2f1e13;
-  background: linear-gradient(180deg, #fff8e8, #ead0a5);
+  width: clamp(220px, 23vw, 260px);
+  min-height: clamp(72px, 9vh, 92px);
+  min-width: 0;
+  border-radius: 0.8rem;
+  border: 2px solid #5b3f2b;
+  background: linear-gradient(180deg, #E6D4B3, #D4B892);
   color: #2a2219;
-  box-shadow: 0 5px 10px rgba(31, 18, 8, 0.28);
-  padding: 0.62rem 0.92rem;
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.2),
+    0 5px 10px rgba(31, 18, 8, 0.22);
+  padding: 0.45rem 0.75rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
-
-.pip-box-player {
-  align-items: flex-end;
-  text-align: right;
-}
-
 
 .pip-box-active {
-  border-color: #237ed6;
+  border: 2px solid #3E86FF;
   box-shadow:
-    0 5px 10px rgba(31, 18, 8, 0.28),
-    0 0 0 2px rgba(35, 126, 214, 0.85),
-    0 0 18px rgba(35, 126, 214, 0.35);
+    inset 0 3px 6px rgba(0, 0, 0, 0.2),
+    0 5px 10px rgba(31, 18, 8, 0.22),
+    0 0 5px rgba(62, 134, 255, 0.3);
 }
 
 .pip-box-label {
-  font-size: 0.88rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.88;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
 }
 
 .pip-box-value {
-  font-size: clamp(1.15rem, 2.2vw, 1.65rem);
-  font-weight: 700;
-  line-height: 1.05;
+  font-size: clamp(1.625rem, 2.4vw, 2.125rem);
+  font-weight: 800;
+  line-height: 0.95;
 }
 
-.pip-box-meta {
-  margin-top: 0.15rem;
-  font-size: 0.76rem;
-  opacity: 0.85;
+.pip-box-unit {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.84;
 }
 
 .board-dice-overlay {
@@ -973,7 +976,8 @@ button:focus-visible {
   .pip-box {
     flex: 1 1 220px;
     min-width: 0;
-    padding: 0.5rem 0.72rem;
+    min-height: clamp(64px, 15vw, 78px);
+    padding: 0.38rem 0.62rem;
   }
 
   .app {
@@ -1067,11 +1071,16 @@ button:focus-visible {
     flex-basis: 100%;
     border-width: 1.5px;
     border-radius: 0.58rem;
-    padding: 0.4rem 0.56rem;
+    min-height: clamp(64px, 18vw, 74px);
+    padding: 0.34rem 0.5rem;
   }
 
   .pip-box-label {
-    font-size: 0.74rem;
+    font-size: 0.69rem;
+  }
+
+  .pip-box-value {
+    font-size: clamp(1.625rem, 8.8vw, 1.95rem);
   }
 
   :root {
@@ -1312,29 +1321,15 @@ button:focus-visible {
 }
 
 .site-main {
-  padding: 0.35rem 0.85rem 1.6rem;
+  padding: 0.2rem 0.85rem 1.5rem;
 }
 
 .home-game-hero {
-  margin-top: 0.15rem;
-}
-
-.home-hero-topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.2rem;
-}
-
-.home-hero-topline h1 {
-  font-size: clamp(1.35rem, 2.1vw, 1.8rem);
-  margin: 0;
+  margin-top: 0;
 }
 
 .home-embedded-game {
-  padding: 0.2rem 0;
+  padding: 0;
 }
 
 .home-embedded-game .header {
@@ -1365,16 +1360,9 @@ button:focus-visible {
   }
 
   .site-main {
-    padding-top: 0.2rem;
+    padding-top: 0.1rem;
   }
 
-  .home-hero-topline {
-    margin-bottom: 0.1rem;
-  }
-
-  .home-hero-topline h1 {
-    font-size: 1.2rem;
-  }
 
   .home-embedded-game .app {
     padding: 0.25rem 0;
