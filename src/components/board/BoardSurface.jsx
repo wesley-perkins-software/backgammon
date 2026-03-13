@@ -151,11 +151,11 @@ export default function BoardSurface(props) {
         <div className="pip-row" aria-label="Pip counts">
           <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
             <span className="pip-box-label">Computer</span>
-            <span className="pip-box-metric"><span className="pip-box-unit">PIP:</span><span className="pip-box-value">{computerPipCount}</span></span>
+            <span className="pip-box-value">{computerPipCount}</span>
           </div>
           <div className={`pip-box pip-box-player ${!game.winner && !isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
             <span className="pip-box-label">Player</span>
-            <span className="pip-box-metric"><span className="pip-box-unit">PIP:</span><span className="pip-box-value">{playerPipCount}</span></span>
+            <span className="pip-box-value">{playerPipCount}</span>
           </div>
         </div>
         <div className="board-surface">

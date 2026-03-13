@@ -311,11 +311,10 @@ button:focus-visible {
     0 2px 6px rgba(31, 18, 8, 0.16);
   padding: 0.26rem 0.62rem;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 0.1rem;
-  text-align: center;
+  gap: 0.4rem;
+  text-align: left;
 }
 
 .pip-box-active {
@@ -327,33 +326,21 @@ button:focus-visible {
 }
 
 .pip-box-label {
-  font-size: 0.66rem;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.11em;
   line-height: 1;
   opacity: 0.9;
 }
 
-.pip-box-metric {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.28rem;
-  line-height: 1;
-}
-
 .pip-box-value {
-  font-size: clamp(1.18rem, 1.95vw, 1.5rem);
-  font-weight: 800;
-  line-height: 0.95;
-}
-
-.pip-box-unit {
-  font-size: 0.66rem;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.84;
+  line-height: 1;
+  margin-left: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .board-dice-overlay {
@@ -997,42 +984,21 @@ button:focus-visible {
     min-height: 42px;
     padding: 0.2rem 0.45rem;
     border-radius: 0.56rem;
-    align-items: center;
-    justify-content: center;
-    flex-direction: row;
-    gap: 0.34rem;
+    gap: 0.3rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .pip-box-label,
-  .pip-box-metric,
-  .pip-box-unit,
   .pip-box-value {
     line-height: 1;
   }
 
   .pip-box-label {
-    font-size: 0.58rem;
-  }
-
-  .pip-box-label::after {
-    content: '\00B7';
-    margin-left: 0.24rem;
-    opacity: 0.72;
-  }
-
-  .pip-box-metric {
-    gap: 0.16rem;
-  }
-
-  .pip-box-unit {
-    font-size: 0.58rem;
+    font-size: 10px;
   }
 
   .pip-box-value {
-    font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+    font-size: clamp(18px, 4.8vw, 20px);
   }
 
   .app {
@@ -1146,15 +1112,11 @@ button:focus-visible {
   }
 
   .pip-box-label {
-    font-size: 0.56rem;
+    font-size: 9px;
   }
 
   .pip-box-value {
-    font-size: clamp(0.92rem, 3.8vw, 1.02rem);
-  }
-
-  .pip-box-unit {
-    font-size: 0.55rem;
+    font-size: clamp(17px, 4.9vw, 18px);
   }
 
   :root {
