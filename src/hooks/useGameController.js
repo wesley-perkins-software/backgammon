@@ -25,6 +25,7 @@ import {
 
 const MOVE_STEP_MS = 210;
 const MOVE_START_DELAY_MS = 40;
+const HIT_TO_BAR_MS = 220;
 const BOARD_DICE_ROLL_MS = 1000;
 const OPENING_ROLL_DIE_ANIM_MS = BOARD_DICE_ROLL_MS;
 const OPENING_ROLL_DIE_HOLD_MS = 220;
@@ -285,6 +286,96 @@ export default function useGameController({ clock = defaultClock, media = defaul
     }
     return [...path, move.to];
   }
+  function topCheckerElementForPoint(point) {
+    const pointElement = pointRefs.current.get(point);
+    if (!pointElement) return null;
+    return pointElement.querySelector('.stack-checker');
+  }
+  function barStackTargetForHit(stateAtMove) {
+    const barWrap = barRef.current?.closest('.bar-lane-wrap');
+    if (!barWrap) return null;
+
+    const hitPlayer = stateAtMove.currentPlayer === PLAYER_A ? PLAYER_B : PLAYER_A;
+    const stackSelector = hitPlayer === PLAYER_B ? '.barStackTop' : '.barStackBottom';
+    const stackElement = barWrap.querySelector(stackSelector);
+    if (!stackElement) return null;
+
+    return {
+      stackElement,
+      hitPlayer,
+      existingCount: stateAtMove.bar[hitPlayer]
+    };
+  }
+  function barSlotCenterFromStack({ stackElement, hitPlayer, existingCount }, checkerRect) {
+    const stackRect = stackElement.getBoundingClientRect();
+    const checkerSize = checkerRect.width;
+    const spacing = checkerSize * 0.44;
+    const slotIndex = existingCount;
+    const targetX = stackRect.left + (stackRect.width / 2);
+    const targetY = hitPlayer === PLAYER_B
+      ? stackRect.top + (checkerSize / 2) + (slotIndex * spacing)
+      : stackRect.bottom - (checkerSize / 2) - (slotIndex * spacing);
+
+    return { x: targetX, y: targetY };
+  }
+  async function animateCheckerToBar(checkerElement, barTargetElement, slotTarget = null) {
+    if (!checkerElement || !barTargetElement) return;
+
+    const checkerRect = checkerElement.getBoundingClientRect();
+    const barRect = barTargetElement.getBoundingClientRect();
+    const clone = checkerElement.cloneNode(true);
+
+    clone.style.position = 'fixed';
+    clone.style.left = `${checkerRect.left}px`;
+    clone.style.top = `${checkerRect.top}px`;
+    clone.style.width = `${checkerRect.width}px`;
+    clone.style.height = `${checkerRect.height}px`;
+    clone.style.margin = '0';
+    clone.style.pointerEvents = 'none';
+    clone.style.zIndex = '9999';
+    clone.style.transform = 'translate(0, 0) scale(1)';
+    clone.style.opacity = '1';
+    clone.style.transition = `transform ${HIT_TO_BAR_MS}ms ease-out, opacity ${HIT_TO_BAR_MS}ms ease-out`;
+    clone.style.willChange = 'transform, opacity';
+
+    const previousOpacity = checkerElement.style.opacity;
+    checkerElement.style.opacity = '0';
+    document.body.appendChild(clone);
+
+    const fallbackTargetX = barRect.left + (barRect.width / 2);
+    const fallbackTargetY = barRect.top + (barRect.height / 2);
+    const slotCenter = slotTarget
+      ? barSlotCenterFromStack(slotTarget, checkerRect)
+      : null;
+    const targetX = slotCenter?.x ?? fallbackTargetX;
+    const targetY = slotCenter?.y ?? fallbackTargetY;
+    const originX = checkerRect.left + (checkerRect.width / 2);
+    const originY = checkerRect.top + (checkerRect.height / 2);
+    const dx = targetX - originX;
+    const dy = targetY - originY;
+
+    await new Promise((resolve) => {
+      const timer = clock.setTimeout(resolve, HIT_TO_BAR_MS + 40);
+      requestAnimationFrame(() => {
+        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.95)`;
+        clone.style.opacity = '0.85';
+      });
+      clone.addEventListener('transitionend', () => {
+        clock.clearTimeout(timer);
+        resolve();
+      }, { once: true });
+    });
+
+    clone.remove();
+    checkerElement.style.opacity = previousOpacity;
+  }
+  async function animateHitCheckerToBar(stateAtMove, move) {
+    if (!move.hit || typeof move.to !== 'number') return;
+    const barTarget = barRef.current?.closest('.bar-lane-wrap') ?? barRef.current;
+    const slotTarget = barStackTargetForHit(stateAtMove);
+    const hitCheckerElement = topCheckerElementForPoint(move.to);
+    await animateCheckerToBar(hitCheckerElement, barTarget, slotTarget);
+  }
   async function animateSingleMove(stateAtMove, move) {
     const player = stateAtMove.currentPlayer;
     const centers = pathForMove(stateAtMove, move).map((loc) => centerFromElement(elementForLocation(loc, player))).filter(Boolean);
@@ -307,6 +398,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
         let animationState = stateAtMove;
         for (const move of moves) {
           await animateSingleMove(animationState, move);
+          if (move.hit) await animateHitCheckerToBar(animationState, move);
           animationState = applyMove(animationState, move);
           if (animationState.currentPlayer !== stateAtMove.currentPlayer || animationState.winner) break;
         }
