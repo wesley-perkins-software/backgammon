@@ -1,4 +1,5 @@
 import { PLAYER_A, PLAYER_B } from '../../game.js';
+import ControlsPanel from './ControlsPanel.jsx';
 
 const TOP_LEFT = [12, 13, 14, 15, 16, 17];
 const TOP_RIGHT = [18, 19, 20, 21, 22, 23];
@@ -124,7 +125,8 @@ export default function BoardSurface(props) {
     moveToDestination, handleSelectSource, isAnimatingMove, diceAnimKey, isAnyRollAnimationRunning,
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
     pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice,
-    canPlayerRoll, handleRoll, handleNewGame, isEndGameOverlayOpen, closeEndGameOverlay
+    canPlayerRoll, handleRoll, handleNewGame, handleUndo,
+    toastMessage, statusMessage, isEndGameOverlayOpen, closeEndGameOverlay
   } = props;
 
   const winnerCopy = game.winner === PLAYER_A
@@ -190,6 +192,17 @@ export default function BoardSurface(props) {
             if (!isEndGameOverlayOpen && !isAnimatingMove && !isComputerTurn) moveToDestination('off');
           }} />
         </aside>
+      </div>
+      <div className={`board-centered-status-controls ${isEndGameOverlayOpen ? 'board-centered-status-controls-hidden' : ''}`.trim()}>
+        {toastMessage && <section className="roll-toast" aria-live="polite">{toastMessage}</section>}
+        <section className="roll-toast" aria-live="polite">{statusMessage}</section>
+        <ControlsPanel
+          isAnimatingMove={isAnimatingMove}
+          isAnyRollAnimationRunning={isAnyRollAnimationRunning}
+          undoCount={game.undoStack.length}
+          onNewGame={handleNewGame}
+          onUndo={handleUndo}
+        />
       </div>
       {isEndGameOverlayOpen && game.winner && (
         <div className="endgame-overlay" role="dialog" aria-modal="true" aria-label="Game over">

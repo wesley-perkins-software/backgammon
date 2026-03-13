@@ -1,6 +1,5 @@
 import SEO from './components/SEO.jsx';
 import BoardSurface from './components/board/BoardSurface.jsx';
-import ControlsPanel from './components/board/ControlsPanel.jsx';
 import DebugPanel from './components/board/DebugPanel.jsx';
 import useGameController from './hooks/useGameController.js';
 import * as defaultClock from './platform/clock.js';
@@ -28,17 +27,6 @@ export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Ba
       )}
 
       <BoardSurface {...controller} />
-
-      {controller.toastMessage && <section className="roll-toast" aria-live="polite">{controller.toastMessage}</section>}
-      <section className="roll-toast" aria-live="polite">{controller.statusMessage}</section>
-
-      <ControlsPanel
-        isAnimatingMove={controller.isAnimatingMove}
-        isAnyRollAnimationRunning={controller.isAnyRollAnimationRunning}
-        undoCount={controller.game.undoStack.length}
-        onNewGame={controller.handleNewGame}
-        onUndo={controller.handleUndo}
-      />
 
       <DebugPanel
         debugOpen={controller.game.dev.debugOpen}
