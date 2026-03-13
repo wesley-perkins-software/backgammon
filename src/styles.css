@@ -183,19 +183,29 @@ button:focus-visible {
 .game-layout {
   --off-rail-width: clamp(90px, 10vw, 110px);
   --layout-column-gap: clamp(0.38rem, 0.7vw, 0.6rem);
-  --board-column-width: calc(100% - var(--off-rail-width) - var(--layout-column-gap));
   display: grid;
-  grid-template-columns: 1fr var(--off-rail-width);
-  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
   row-gap: 0.35rem;
-  column-gap: var(--layout-column-gap);
   align-items: start;
   min-width: 0;
 }
 
+.board-row,
+.board-ui-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--off-rail-width);
+  column-gap: var(--layout-column-gap);
+  align-items: start;
+}
+
+.board-wrapper,
 .board-centered-status-controls {
-  width: min(100%, var(--board-column-width));
-  margin-top: 0.85rem;
+  grid-column: 1;
+}
+
+.board-centered-status-controls {
+  width: 100%;
+  margin-top: 0.8rem;
   display: grid;
   justify-items: center;
   gap: 0.5rem;
@@ -245,8 +255,6 @@ button:focus-visible {
 }
 
 .pip-row {
-  grid-column: 1;
-  grid-row: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -255,8 +263,6 @@ button:focus-visible {
 }
 
 .home-rail {
-  grid-column: 2;
-  grid-row: 2;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1015,19 +1021,12 @@ button:focus-visible {
 }
 
 @media (max-width: 1080px) {
-  .game-layout {
-    --board-column-width: 100%;
-    grid-template-columns: 1fr;
-  }
-
-  .pip-row,
-  .board-surface,
-  .home-rail {
-    grid-column: 1;
+  .board-row,
+  .board-ui-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .home-rail {
-    grid-row: 3;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: 1fr;
@@ -1252,10 +1251,6 @@ button:focus-visible {
   .die {
     width: 40px;
     height: 40px;
-  }
-
-  .board-shell {
-    gap: 0.55rem;
   }
 
   .board-surface {
