@@ -43,10 +43,7 @@ export default function HomePage() {
         jsonLd={webAppJsonLd}
       />
 
-      <section className="home-game-hero" aria-labelledby="home-play-heading">
-        <div className="home-hero-topline">
-          <h1 id="home-play-heading">Play Backgammon Online</h1>
-        </div>
+      <section className="home-game-hero" aria-label="Backgammon game">
         <GameExperience showSeo={false} showHeader={false} className="home-embedded-game" />
       </section>
 
