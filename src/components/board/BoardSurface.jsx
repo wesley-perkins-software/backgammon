@@ -149,8 +149,16 @@ export default function BoardSurface(props) {
     }}>
       <div className="game-layout">
         <div className="pip-row" aria-label="Pip counts">
-          <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}><span className="pip-box-label">Computer</span><span className="pip-box-value">PIP: {computerPipCount}</span><span className="pip-box-meta">Bar: {game.bar.B}</span></div>
-          <div className={`pip-box pip-box-player ${!game.winner && !isComputerTurn ? 'pip-box-active' : ''}`.trim()}><span className="pip-box-label">Player</span><span className="pip-box-value">PIP: {playerPipCount}</span><span className="pip-box-meta">Bar: {game.bar.A}</span></div>
+          <div className={`pip-box pip-box-computer ${!game.winner && isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
+            <span className="pip-box-label">Computer</span>
+            <span className="pip-box-value">{computerPipCount}</span>
+            <span className="pip-box-unit">PIP</span>
+          </div>
+          <div className={`pip-box pip-box-player ${!game.winner && !isComputerTurn ? 'pip-box-active' : ''}`.trim()}>
+            <span className="pip-box-label">Player</span>
+            <span className="pip-box-value">{playerPipCount}</span>
+            <span className="pip-box-unit">PIP</span>
+          </div>
         </div>
         <div className="board-surface">
           <div className="point-band top-band top-left-band">{TOP_LEFT.map((point) => renderPoint(point, true))}</div>
