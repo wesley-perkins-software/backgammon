@@ -254,7 +254,14 @@ button:focus-visible {
   filter: brightness(0.82);
 }
 
+.pip-row-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--off-rail-width);
+  column-gap: var(--layout-column-gap);
+}
+
 .pip-row {
+  grid-column: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1021,6 +1028,7 @@ button:focus-visible {
 }
 
 @media (max-width: 1080px) {
+  .pip-row-wrap,
   .board-row,
   .board-ui-row {
     grid-template-columns: minmax(0, 1fr);
