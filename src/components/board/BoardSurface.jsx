@@ -211,7 +211,9 @@ export default function BoardSurface(props) {
         <div className={`board-ui-row ${isEndGameOverlayOpen ? 'board-centered-status-controls-hidden' : ''}`.trim()}>
           <div className="board-centered-status-controls">
             {toastMessage && <section className="roll-toast" aria-live="polite">{toastMessage}</section>}
-            <section className="roll-toast" aria-live="polite">{statusMessage}</section>
+            <div className="status-region">
+              <section className="roll-toast status-message" aria-live="polite">{statusMessage}</section>
+            </div>
             <ControlsPanel
               isAnimatingMove={isAnimatingMove}
               isAnyRollAnimationRunning={isAnyRollAnimationRunning}
