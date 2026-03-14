@@ -48,7 +48,7 @@ describe('App turn-flow characterization', () => {
       openingRollPending: false,
       openingRoll: { player: 6, computer: 1, status: 'done' },
       undoStack: [],
-      statusText: 'Player to move. Roll dice.',
+      statusText: 'Your turn. Roll the dice.',
       dev: { debugOpen: false, dieA: 6, dieB: 5 }
     }));
   }
@@ -86,7 +86,7 @@ describe('App turn-flow characterization', () => {
 
     await vi.advanceTimersByTimeAsync(1000);
 
-    expect(screen.getAllByText(/You rolled 6 and 5\. No legal moves\. Turn passes to computer\./i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/You rolled 6 and 5\. You have no legal moves\. Turn passes to the computer\./i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Roll Dice' })).toBeDisabled();
     expect(screen.queryByText(/Computer rolled/i)).not.toBeInTheDocument();
 
@@ -98,6 +98,6 @@ describe('App turn-flow characterization', () => {
     expect(screen.getAllByText(/No legal moves\./i).length).toBeGreaterThan(0);
 
     await vi.advanceTimersByTimeAsync(1);
-    expect(screen.getByText(/Turn passed to computer\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Computer's turn\. Rolling dice\.\.\./i)).toBeInTheDocument();
   });
 });

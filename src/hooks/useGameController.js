@@ -227,7 +227,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
 
   useEffect(() => {
     if (gamePhase === 'OPENING_ROLL' || game.winner || game.currentPlayer !== PLAYER_A || playerTurnPhase !== 'NO_MOVES_NOTICE') return;
-    const noMovesMessage = `You rolled ${game.dice.values[0]} and ${game.dice.values[1]}. No legal moves. Turn passes to computer.`;
+    const noMovesMessage = `You rolled ${game.dice.values[0]} and ${game.dice.values[1]}. You have no legal moves. Turn passes to the computer.`;
     setGame((prev) => {
       if (
         prev.winner
@@ -240,7 +240,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
       return { ...prev, statusText: noMovesMessage };
     });
     const timer = clock.setTimeout(() => {
-      setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_A || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 || computeLegalMoves(prev).length !== 0 ? prev : pushUndoState(prev, endTurn(prev, `Player rolled ${prev.dice.values[0]} and ${prev.dice.values[1]}. No legal moves. Turn passed to computer.`)));
+      setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_A || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 || computeLegalMoves(prev).length !== 0 ? prev : pushUndoState(prev, endTurn(prev, `You rolled ${prev.dice.values[0]} and ${prev.dice.values[1]}. You have no legal moves. Turn passes to the computer.`)));
       setPlayerTurnPhase('NEED_ROLL');
     }, PLAYER_NO_MOVES_NOTICE_MS);
     return () => clock.clearTimeout(timer);
@@ -590,7 +590,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
       if (computerTurnInFlightRef.current) return;
       if (game.dice.values.length === 2 && game.dice.remaining.length === 0 && computeLegalMoves(game).length === 0) {
         const [rolledA, rolledB] = game.dice.values;
-        setGame((prev) => prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 ? prev : pushUndoState(prev, endTurn(prev, `Computer rolled ${rolledA} and ${rolledB} but has no legal moves. Turn passed.`)));
+        setGame((prev) => prev.currentPlayer !== PLAYER_B || prev.dice.values.length !== 2 || prev.dice.remaining.length !== 0 ? prev : pushUndoState(prev, endTurn(prev, `Computer rolled ${rolledA} and ${rolledB}. Computer has no legal moves. Your turn.`)));
         setToastMessage(null); return;
       }
       if (game.dice.remaining.length === 0) {
@@ -613,9 +613,9 @@ export default function useGameController({ clock = defaultClock, media = defaul
           setPendingRoll((prev) => (prev?.id === rollId ? null : prev)); setIsAnimatingRoll(false);
           if (computerTurnSequenceIdRef.current !== sequenceId || !committed) return;
           if (computeLegalMoves(committed).length === 0) {
-            setToastMessage(`Computer rolled ${d1} and ${d2} — no legal moves.`); await clock.wait(700);
+            setToastMessage(`Computer rolled ${d1} and ${d2}. Computer has no legal moves.`); await clock.wait(700);
             if (computerTurnSequenceIdRef.current !== sequenceId) return;
-            setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_B ? prev : pushUndoState(prev, endTurn(prev, `Computer rolled ${d1} and ${d2} but has no legal moves. Turn passed.`)));
+            setGame((prev) => prev.winner || prev.currentPlayer !== PLAYER_B ? prev : pushUndoState(prev, endTurn(prev, `Computer rolled ${d1} and ${d2}. Computer has no legal moves. Your turn.`)));
             setToastMessage(null);
           }
         })().finally(() => {
