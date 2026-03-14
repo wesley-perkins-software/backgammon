@@ -4,20 +4,19 @@ export default function TermsPage() {
   return (
     <article className="content-page">
       <SEO
-        title="Terms of Service | Backgammon Local"
+        title="Terms of Service | Backgammon"
         description="Read the Terms of Service for this browser-based backgammon website, including acceptable use, disclaimers, and limitations of liability."
         path="/terms"
       />
       <h1>Terms of Service</h1>
       <p>
-        These Terms of Service explain how you may use Backgammon Local, a browser-based backgammon website. We wrote these terms in plain
+        These Terms of Service explain how you may use Backgammon, a browser-based backgammon website. We wrote these terms in plain
         language so they are easy to read and practical to follow. By accessing or using this site, you agree to these terms. If you do not
         agree, please do not use the site.
       </p>
       <p>
-        Backgammon Local is designed as a lightweight game experience that runs in your browser, with supporting pages like rules, strategy,
-        and FAQ content. These terms are intended to set clear expectations about acceptable use, service limitations, and how to contact us
-        when questions come up.
+        Backgammon is designed as a lightweight game experience that runs in your browser, with supporting pages like rules, strategy,
+        and FAQ content. These terms are intended to set clear expectations about acceptable use and service limitations.
       </p>
 
       <h2>Acceptance of terms</h2>
@@ -36,7 +35,7 @@ export default function TermsPage() {
 
       <h2>Use of the site</h2>
       <p>
-        Backgammon Local is provided for normal, personal use as an online game and learning resource. You agree not to misuse the site. For
+        Backgammon is provided for normal, personal use as an online game and learning resource. You agree not to misuse the site. For
         example, you agree not to:
       </p>
       <ul>
@@ -52,11 +51,10 @@ export default function TermsPage() {
 
       <h2>Browser-based gameplay and local save behavior</h2>
       <p>
-        Backgammon Local runs in your browser. Gameplay state may be saved locally on your device through browser storage so your current
-        game can persist between visits on the same browser.
+        Backgammon runs in your browser. Your current game may be saved on your device so it can continue between visits in the same browser.
       </p>
       <p>
-        Because saved data is local to your device, it may be removed if you clear browser storage, use private browsing, reset your browser,
+        Because saved data stays on your device, it may be removed if you clear site data, use private browsing, reset your browser,
         install certain extensions, or switch devices/browsers. We cannot guarantee recovery of locally stored game data.
       </p>
       <p>
@@ -80,11 +78,11 @@ export default function TermsPage() {
 
       <h2>Limitation of liability</h2>
       <p>
-        To the fullest extent allowed by law, Backgammon Local and its operators are not liable for indirect, incidental, special,
+        To the fullest extent allowed by law, Backgammon and its operators are not liable for indirect, incidental, special,
         consequential, or punitive damages, or for loss of data, loss of use, or loss of goodwill resulting from your use of the site.
       </p>
       <p>
-        This includes situations such as interruptions, browser compatibility issues, local storage loss, bugs, temporary downtime, or
+        This includes situations such as interruptions, browser compatibility issues, saved-game loss, bugs, temporary downtime, or
         unexpected behavior in the interface.
       </p>
       <p>
@@ -134,14 +132,6 @@ export default function TermsPage() {
         means you accept the revised terms.
       </p>
 
-      <h2>Contact for questions about terms</h2>
-      <p>
-        If you have questions about these terms, please contact us at <a href="mailto:contact@example.com">contact@example.com</a>.
-      </p>
-      <p>
-        <strong>Note:</strong> This address is currently a placeholder and should be replaced with a real support contact before production
-        use.
-      </p>
     </article>
   );
 }
