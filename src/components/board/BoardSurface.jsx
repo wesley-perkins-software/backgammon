@@ -236,7 +236,7 @@ export default function BoardSurface(props) {
           </div>
         </div>
       )}
-      {movingChecker && <span aria-hidden="true" className={`checker moving-checker checker-${movingChecker.player === 'B' ? 'b' : 'a'}`} style={{ left: `${movingChecker.x}px`, top: `${movingChecker.y}px`, '--move-step-ms': `${moveStepMs}ms` }} />}
+      {movingChecker && <span aria-hidden="true" className={`checker moving-checker checker-${movingChecker.player === 'B' ? 'b' : 'a'} ${movingChecker.isMoving ? 'is-moving' : ''}`} style={{ left: `${movingChecker.x}px`, top: `${movingChecker.y}px`, '--move-step-ms': `${moveStepMs}ms`, '--move-dx': `${movingChecker.dx ?? 0}px`, '--move-dy': `${movingChecker.dy ?? 0}px` }} />}
     </section>
   );
 }

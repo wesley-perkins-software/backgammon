@@ -23,7 +23,7 @@ import {
   findDeterministicChoice
 } from './movePathChoice.js';
 
-const MOVE_STEP_MS = 210;
+const MOVE_ANIMATION_MS = 220;
 const MOVE_START_DELAY_MS = 40;
 const HIT_TO_BAR_MS = 220;
 const BOARD_DICE_ROLL_MS = 1000;
@@ -273,25 +273,6 @@ export default function useGameController({ clock = defaultClock, media = defaul
     if (location === 'off') return bearOffRefs.current[playerForOff] ?? null;
     return pointRefs.current.get(location) ?? null;
   }
-  function pathForMove(stateAtMove, move) {
-    const path = [move.from];
-    const player = stateAtMove.currentPlayer;
-    if (typeof move.from === 'number' && typeof move.to === 'number') {
-      const dir = move.to > move.from ? 1 : -1;
-      for (let p = move.from + dir; p !== move.to + dir; p += dir) path.push(p);
-      return path;
-    }
-    if (typeof move.from === 'number' && move.to === 'off') {
-      const dir = player === PLAYER_A ? -1 : 1;
-      for (let step = 1; step <= move.dieUsed; step += 1) {
-        const point = move.from + dir * step;
-        if (point < 0 || point > 23) return [...path, 'off'];
-        path.push(point);
-      }
-      return [...path, 'off'];
-    }
-    return [...path, move.to];
-  }
   function topCheckerElementForPoint(point) {
     const pointElement = pointRefs.current.get(point);
     if (!pointElement) return null;
@@ -387,14 +368,27 @@ export default function useGameController({ clock = defaultClock, media = defaul
   }
   async function animateSingleMove(stateAtMove, move) {
     const player = stateAtMove.currentPlayer;
-    const centers = pathForMove(stateAtMove, move).map((loc) => centerFromElement(elementForLocation(loc, player))).filter(Boolean);
-    if (centers.length < 2) return;
-    setMovingChecker({ player, x: centers[0].x, y: centers[0].y });
+    const sourceCenter = centerFromElement(elementForLocation(move.from, player));
+    const destinationCenter = centerFromElement(elementForLocation(move.to, player));
+    if (!sourceCenter || !destinationCenter) return;
+    setMovingChecker({
+      player,
+      x: sourceCenter.x,
+      y: sourceCenter.y,
+      dx: 0,
+      dy: 0,
+      isMoving: false
+    });
     await clock.wait(MOVE_START_DELAY_MS);
-    for (let i = 1; i < centers.length; i += 1) {
-      setMovingChecker((prev) => (prev ? { ...prev, x: centers[i].x, y: centers[i].y } : prev));
-      await clock.wait(MOVE_STEP_MS);
-    }
+    setMovingChecker((prev) => (prev
+      ? {
+        ...prev,
+        dx: destinationCenter.x - sourceCenter.x,
+        dy: destinationCenter.y - sourceCenter.y,
+        isMoving: true
+      }
+      : prev));
+    await clock.wait(MOVE_ANIMATION_MS);
     await clock.wait(30);
   }
   async function performMoveSequence(stateAtMove, moves) {
@@ -633,7 +627,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   return {
     game, gamePhase, openingMessage, statusMessage, playerPipCount, computerPipCount, canPlayerRoll, isComputerTurn, isAnimatingMove,
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
-    activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
+    activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_ANIMATION_MS,
     pendingPathChoices, pendingIntermediateSet, isEndGameOverlayOpen,
     hiddenHitCheckers, pendingBarHits,
     boardStageRef, pointRefs, barRef, bearOffRefs,
