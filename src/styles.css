@@ -463,6 +463,7 @@ button:focus-visible {
   font-weight: 700;
   line-height: 1;
   margin-left: auto;
+  white-space: nowrap;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
