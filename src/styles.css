@@ -224,14 +224,15 @@ button:focus-visible {
   border: 2px solid #6a4a30;
   background: linear-gradient(180deg, #fff4dc, #f0d5ab);
   color: #2b2017;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.9rem;
   width: fit-content;
   max-width: min(94vw, 620px);
   box-shadow: 0 4px 10px rgba(45, 25, 10, 0.16);
 }
 
 .controls {
-  margin-top: 0.15rem;
+  margin-top: 0.4rem;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -239,15 +240,30 @@ button:focus-visible {
 }
 
 .controls .button-primary {
-  background: #3b79d9;
-  border-color: #2f65b8;
-  color: #fff;
+  background: linear-gradient(180deg, #d1b38c, #c29f75);
+  border: 2px solid #6b4a32;
+  color: #3b2a1c;
+  border-radius: 0.625rem;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.35);
+  transition: transform 120ms ease, filter 140ms ease;
+}
+
+.controls .button-primary:hover:not(:disabled),
+.controls .button-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.controls .button-primary:active:not(:disabled),
+.controls .button-secondary:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .controls .button-secondary {
-  background: transparent;
-  border-color: #5b412d;
-  color: #2a2219;
+  background: linear-gradient(180deg, #efe3cf, #e5d5be);
+  border-color: #6b4a32;
+  color: #4b3828;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.17), inset 0 1px rgba(255, 255, 255, 0.4);
+  transition: transform 120ms ease, filter 140ms ease;
 }
 
 .game-layout-overlay-open {
@@ -1247,7 +1263,7 @@ button:focus-visible {
 
   .controls button {
     width: 100%;
-    padding: 0.5rem;
+    padding: 10px 18px;
     font-size: 0.9rem;
   }
 
