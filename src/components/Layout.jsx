@@ -6,7 +6,7 @@ export default function Layout({ children }) {
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="site-header-inner">
-          <Link to="/" className="site-title">Backgammon Local</Link>
+          <Link to="/" className="site-title">Backgammon</Link>
           <nav aria-label="Primary navigation" className="site-nav">
             <NavLink to="/" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
             <NavLink to="/rules" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Rules</NavLink>
@@ -24,10 +24,8 @@ export default function Layout({ children }) {
           <NavLink to="/single-player-backgammon">Single Player</NavLink>
           <NavLink to="/free-backgammon-online">Free Backgammon</NavLink>
           <NavLink to="/about">About</NavLink>
-          <NavLink to="/contact">Contact</NavLink>
           <NavLink to="/terms">Terms of Service</NavLink>
           <NavLink to="/privacy">Privacy</NavLink>
-          <NavLink to="/changelog">Changelog</NavLink>
         </nav>
       </footer>
     </div>

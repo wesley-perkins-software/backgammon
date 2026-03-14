@@ -7,7 +7,7 @@ import * as defaultMedia from './platform/media.js';
 import * as defaultRandom from './platform/random.js';
 import * as defaultStorage from './platform/storage.js';
 
-export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Backgammon Online Locally', seoDescription = 'Play Backgammon Local against the computer with automatic local save and beginner-friendly controls.', showHeader = true, className = '', adapters = {} }) {
+export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Backgammon Online Locally', seoDescription = 'Play Backgammon against the computer with automatic save and beginner-friendly controls.', showHeader = true, className = '', adapters = {} }) {
   const {
     clock = defaultClock,
     media = defaultMedia,
@@ -21,8 +21,8 @@ export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Ba
       {showSeo && <SEO title={seoTitle} description={seoDescription} path={seoPath} />}
       {showHeader && (
         <header className="header">
-          <h1>Backgammon Local</h1>
-          <p className="subtitle">Play as Player against the computer, fully saved in your browser.</p>
+          <h1>Backgammon</h1>
+          <p className="subtitle">Play as Player against the computer, automatically saved in your browser.</p>
         </header>
       )}
 

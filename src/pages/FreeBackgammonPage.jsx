@@ -11,7 +11,7 @@ export default function FreeBackgammonPage() {
       />
       <h1>Free Backgammon Online</h1>
       <p>
-        If you want to play backgammon free without installing software, this page is for you. Backgammon Local runs directly in your
+        If you want to play backgammon free without installing software, this page is for you. Backgammon runs directly in your
         browser so you can start in seconds, whether you are playing a quick practice round or a longer learning session.
       </p>
       <p>
