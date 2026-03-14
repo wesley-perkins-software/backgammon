@@ -52,6 +52,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   const [playerTurnPhase, setPlayerTurnPhase] = useState('NEED_ROLL');
   const [pendingPathChoices, setPendingPathChoices] = useState(null);
   const [hiddenHitCheckers, setHiddenHitCheckers] = useState([]);
+  const [pendingBarHits, setPendingBarHits] = useState({ A: 0, B: 0 });
   const [isEndGameOverlayOpen, setIsEndGameOverlayOpen] = useState(false);
 
   const boardStageRef = useRef(null);
@@ -380,6 +381,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
       if (prev.some((entry) => entry.point === move.to && entry.player === hitPlayer)) return prev;
       return [...prev, { point: move.to, player: hitPlayer }];
     });
+    setPendingBarHits((prev) => ({ ...prev, [hitPlayer]: prev[hitPlayer] + 1 }));
     const hitCheckerElement = topCheckerElementForPoint(move.to);
     await animateCheckerToBar(hitCheckerElement, barTarget, slotTarget);
   }
@@ -399,6 +401,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     if (isAnimatingMove) return;
     setSelectedSource(null);
     setHiddenHitCheckers([]);
+    setPendingBarHits({ A: 0, B: 0 });
     const prefersReducedMotion = media.prefersReducedMotion();
     setIsAnimatingMove(true);
     try {
@@ -417,6 +420,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     }
     setGame((prev) => (prev !== stateAtMove ? prev : pushUndoState(prev, applyMoveSequence(prev, moves))));
     setHiddenHitCheckers([]);
+    setPendingBarHits({ A: 0, B: 0 });
   }
 
   function moveToDestination(destination) {
@@ -482,6 +486,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     setSelectedSource(null);
     setPendingPathChoices(null);
     setHiddenHitCheckers([]);
+    setPendingBarHits({ A: 0, B: 0 });
   }
 
   function handleNewGame() {
@@ -630,7 +635,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
     pendingPathChoices, pendingIntermediateSet, isEndGameOverlayOpen,
-    hiddenHitCheckers,
+    hiddenHitCheckers, pendingBarHits,
     boardStageRef, pointRefs, barRef, bearOffRefs,
     handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, closeEndGameOverlay, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie

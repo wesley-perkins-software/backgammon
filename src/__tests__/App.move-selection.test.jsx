@@ -301,6 +301,10 @@ describe('App move selection', () => {
 
     // During animation, the hit checker should not reappear at the original point.
     expect(hitIntermediate.querySelectorAll('.checker-b')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Bar' }).querySelectorAll('.checker-b')).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(200);
+    expect(screen.getByRole('button', { name: 'Bar' }).querySelectorAll('.checker-b')).toHaveLength(1);
 
     await vi.runAllTimersAsync();
 
