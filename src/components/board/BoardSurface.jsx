@@ -96,9 +96,10 @@ function BoardDice({ game, diceAnimKey, isBoardDiceRolling, rollingDiceValues, r
   );
 }
 
-function Point({ index, value, selected, highlighted, pathChoiceIntermediate, movable, onClick, isTop, pointRef }) {
+function Point({ index, value, selected, highlighted, pathChoiceIntermediate, movable, onClick, isTop, pointRef, hiddenCheckerOwner = null }) {
   const owner = pointOwner(value);
-  const count = checkerCount(value);
+  const hiddenCount = hiddenCheckerOwner != null && owner === hiddenCheckerOwner ? 1 : 0;
+  const count = Math.max(0, checkerCount(value) - hiddenCount);
   const stackDivisor = Math.max(4, count - 1);
   return <button ref={pointRef} className={`point ${isTop ? 'point-top' : 'point-bottom'} ${selected ? 'selected is-selected' : ''} ${highlighted ? 'legal is-legal' : ''} ${pathChoiceIntermediate ? 'path-choice-option' : ''} ${movable ? 'movable-source' : ''}`} onClick={onClick} aria-label={`Point ${index + 1}`} type="button"><div className={`checker-stack ${isTop ? 'stack-top' : 'stack-bottom'}`}>{Array.from({ length: count }).map((_, i) => <span key={i} className={`checker stack-checker checker-${owner === 'B' ? 'b' : 'a'} ${movable && i === count - 1 ? 'checker-movable' : ''}`} style={{ '--stack-index': i, '--stack-offset': i / stackDivisor, zIndex: count - i }} />)}</div></button>;
 }
@@ -126,8 +127,11 @@ export default function BoardSurface(props) {
     pendingRoll, disableUsedDiceStyling, movingChecker, moveStepMs,
     pendingPathChoices, chooseIntermediatePath, cancelPendingPathChoice,
     canPlayerRoll, handleRoll, handleNewGame, handleUndo,
-    toastMessage, statusMessage, isEndGameOverlayOpen, closeEndGameOverlay
+    toastMessage, statusMessage, isEndGameOverlayOpen, closeEndGameOverlay,
+    hiddenHitCheckers
   } = props;
+
+  const hiddenCheckerByPoint = new Map(hiddenHitCheckers.map((entry) => [entry.point, entry.player]));
 
   const winnerCopy = game.winner === PLAYER_A
     ? {
@@ -142,7 +146,7 @@ export default function BoardSurface(props) {
   const renderPoint = (point, isTop) => <Point key={point} index={point} value={game.points[point]} isTop={isTop} pointRef={(node) => {
     if (node) pointRefs.current.set(point, node);
     else pointRefs.current.delete(point);
-  }} selected={activeSelectedSource === point} highlighted={destinationSet.has(String(point))} pathChoiceIntermediate={pendingIntermediateSet.has(String(point))} movable={showMovableSources && movableSourceSet.has(String(point))} onClick={() => {
+  }} selected={activeSelectedSource === point} highlighted={destinationSet.has(String(point))} pathChoiceIntermediate={pendingIntermediateSet.has(String(point))} movable={showMovableSources && movableSourceSet.has(String(point))} hiddenCheckerOwner={hiddenCheckerByPoint.get(point) ?? null} onClick={() => {
     if (isEndGameOverlayOpen || isAnimatingMove || isComputerTurn) return;
     if (pendingPathChoices) {
       if (destinationSet.has(String(point))) chooseIntermediatePath(point);

@@ -51,6 +51,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   const [toastMessage, setToastMessage] = useState(null);
   const [playerTurnPhase, setPlayerTurnPhase] = useState('NEED_ROLL');
   const [pendingPathChoices, setPendingPathChoices] = useState(null);
+  const [hiddenHitCheckers, setHiddenHitCheckers] = useState([]);
   const [isEndGameOverlayOpen, setIsEndGameOverlayOpen] = useState(false);
 
   const boardStageRef = useRef(null);
@@ -342,8 +343,6 @@ export default function useGameController({ clock = defaultClock, media = defaul
     clone.style.transition = `transform ${HIT_TO_BAR_MS}ms ease-out, opacity ${HIT_TO_BAR_MS}ms ease-out`;
     clone.style.willChange = 'transform, opacity';
 
-    const previousOpacity = checkerElement.style.opacity;
-    checkerElement.style.opacity = '0';
     document.body.appendChild(clone);
 
     const fallbackTargetX = barRect.left + (barRect.width / 2);
@@ -371,12 +370,16 @@ export default function useGameController({ clock = defaultClock, media = defaul
     });
 
     clone.remove();
-    checkerElement.style.opacity = previousOpacity;
   }
   async function animateHitCheckerToBar(stateAtMove, move) {
     if (!move.hit || typeof move.to !== 'number') return;
     const barTarget = barRef.current?.closest('.bar-lane-wrap') ?? barRef.current;
     const slotTarget = barStackTargetForHit(stateAtMove);
+    const hitPlayer = stateAtMove.currentPlayer === PLAYER_A ? PLAYER_B : PLAYER_A;
+    setHiddenHitCheckers((prev) => {
+      if (prev.some((entry) => entry.point === move.to && entry.player === hitPlayer)) return prev;
+      return [...prev, { point: move.to, player: hitPlayer }];
+    });
     const hitCheckerElement = topCheckerElementForPoint(move.to);
     await animateCheckerToBar(hitCheckerElement, barTarget, slotTarget);
   }
@@ -395,6 +398,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
   async function performMoveSequence(stateAtMove, moves) {
     if (isAnimatingMove) return;
     setSelectedSource(null);
+    setHiddenHitCheckers([]);
     const prefersReducedMotion = media.prefersReducedMotion();
     setIsAnimatingMove(true);
     try {
@@ -412,6 +416,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
       setIsAnimatingMove(false);
     }
     setGame((prev) => (prev !== stateAtMove ? prev : pushUndoState(prev, applyMoveSequence(prev, moves))));
+    setHiddenHitCheckers([]);
   }
 
   function moveToDestination(destination) {
@@ -476,6 +481,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     setToastMessage(null);
     setSelectedSource(null);
     setPendingPathChoices(null);
+    setHiddenHitCheckers([]);
   }
 
   function handleNewGame() {
@@ -624,6 +630,7 @@ export default function useGameController({ clock = defaultClock, media = defaul
     isAnyRollAnimationRunning, diceAnimKey, pendingRoll, disableUsedDiceStyling, toastMessage, movingChecker,
     activeSelectedSource, destinationSet, movableSourceSet, showMovableSources, moveStepMs: MOVE_STEP_MS,
     pendingPathChoices, pendingIntermediateSet, isEndGameOverlayOpen,
+    hiddenHitCheckers,
     boardStageRef, pointRefs, barRef, bearOffRefs,
     handleRoll, handleSelectSource, moveToDestination, chooseIntermediatePath, cancelPendingPathChoice, closeEndGameOverlay, handleUndo, handleNewGame, handleResetPosition, clearSavedGame,
     toggleDebug, updateDebugDie
