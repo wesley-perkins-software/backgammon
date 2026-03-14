@@ -313,7 +313,7 @@ export function applyMove(state, move) {
   let next = applyMoveInternal(state, move);
 
   if (next.winner) {
-    return withStatus(next, `${playerLabel(next.currentPlayer)} wins.`);
+    return withStatus(next, next.currentPlayer === PLAYER_A ? 'You win!' : 'Computer wins.');
   }
 
   const remainingLegal = computeLegalMoves(next);
@@ -388,12 +388,14 @@ export function rollDice(state, forcedValues = null, options = {}) {
       values: [d1, d2],
       remaining
     },
-    statusText: `${playerLabel(state.currentPlayer)} rolled ${d1} and ${d2}.`
+    statusText: `${state.currentPlayer === PLAYER_A ? 'You' : 'Computer'} rolled ${d1} and ${d2}.`
   };
 
   if (computeLegalMoves(next).length === 0) {
     if (autoPassNoMoves) {
-      next = endTurn(next, `${playerLabel(state.currentPlayer)} rolled ${d1} and ${d2} but has no legal moves. Turn passed.`);
+      next = endTurn(next, state.currentPlayer === PLAYER_A
+        ? `You rolled ${d1} and ${d2}. You have no legal moves. Turn passes to the computer.`
+        : `Computer rolled ${d1} and ${d2}. Computer has no legal moves. Your turn.`);
     } else {
       next = {
         ...next,
@@ -401,7 +403,9 @@ export function rollDice(state, forcedValues = null, options = {}) {
           values: [d1, d2],
           remaining: []
         },
-        statusText: `${playerLabel(state.currentPlayer)} rolled ${d1} and ${d2} but has no legal moves.`
+        statusText: state.currentPlayer === PLAYER_A
+          ? `You rolled ${d1} and ${d2}. You have no legal moves.`
+          : `Computer rolled ${d1} and ${d2}. Computer has no legal moves.`
       };
     }
   }
@@ -415,7 +419,7 @@ export function endTurn(state, statusTextOverride = null) {
     ...cloneState(state),
     currentPlayer: nextPlayer,
     dice: { values: [], remaining: [] },
-    statusText: statusTextOverride ?? `${playerLabel(nextPlayer)} to move. Roll dice.`
+    statusText: statusTextOverride ?? (nextPlayer === PLAYER_A ? 'Your turn. Roll the dice.' : "Computer's turn. Rolling dice...")
   };
 }
 

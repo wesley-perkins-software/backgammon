@@ -39,7 +39,7 @@ function buildSingleClickScenario() {
     openingRollPending: false,
     openingRoll: { player: 6, computer: 1, status: 'done' },
     undoStack: [],
-    statusText: 'Player rolled 6 and 1.',
+    statusText: 'You rolled 6 and 1.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
 }
@@ -61,7 +61,7 @@ function buildChainClickScenario() {
     openingRollPending: false,
     openingRoll: { player: 6, computer: 1, status: 'done' },
     undoStack: [],
-    statusText: 'Player rolled 5 and 6.',
+    statusText: 'You rolled 5 and 6.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
 }
@@ -83,7 +83,7 @@ function buildDoubleOnesChainScenario() {
     openingRollPending: false,
     openingRoll: { player: 6, computer: 1, status: 'done' },
     undoStack: [],
-    statusText: 'Player rolled 1 and 1.',
+    statusText: 'You rolled 1 and 1.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
 }
@@ -108,7 +108,7 @@ function buildAmbiguousPathScenario() {
     openingRollPending: false,
     openingRoll: { player: 6, computer: 1, status: 'done' },
     undoStack: [],
-    statusText: 'Player rolled 1 and 2.',
+    statusText: 'You rolled 1 and 2.',
     dev: { debugOpen: false, dieA: 1, dieB: 1 }
   };
 }
@@ -281,7 +281,7 @@ describe('App move selection', () => {
     expect(screen.getAllByText('Choose which blot to hit').at(-1)).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
-    expect(screen.getAllByText('Player rolled 1 and 2.').at(-1)).toBeInTheDocument();
+    expect(screen.getAllByText('You rolled 1 and 2.').at(-1)).toBeInTheDocument();
   });
 
   it('keeps a hit blot hidden on its original point while intermediate-step path resolution animates', async () => {
