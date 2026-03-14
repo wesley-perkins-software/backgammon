@@ -283,4 +283,37 @@ describe('App move selection', () => {
     await user.keyboard('{Escape}');
     expect(screen.getAllByText('Player rolled 1 and 2.').at(-1)).toBeInTheDocument();
   });
+
+  it('keeps a hit blot hidden on its original point while intermediate-step path resolution animates', async () => {
+    vi.useFakeTimers();
+    setMatchMedia(false);
+    seedState(buildAmbiguousPathScenario());
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<App showSeo={false} showHeader={false} />);
+
+    const source = screen.getByRole('button', { name: 'Point 11' });
+    const finalDestination = screen.getByRole('button', { name: 'Point 8' });
+    const hitIntermediate = screen.getByRole('button', { name: 'Point 10' });
+
+    await user.click(source);
+    await user.click(finalDestination);
+    await user.click(hitIntermediate);
+
+    // During animation, the hit checker should not reappear at the original point.
+    expect(hitIntermediate.querySelectorAll('.checker-b')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Bar' }).querySelectorAll('.checker-b')).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(200);
+    expect(screen.getByRole('button', { name: 'Bar' }).querySelectorAll('.checker-b')).toHaveLength(1);
+
+    await vi.runAllTimersAsync();
+
+    await waitFor(() => {
+      expect(hitIntermediate.querySelectorAll('.checker-b')).toHaveLength(0);
+      expect(screen.getByRole('button', { name: 'Bar' }).querySelectorAll('.checker-b')).toHaveLength(1);
+      expect(finalDestination.querySelectorAll('.checker-a')).toHaveLength(1);
+    });
+
+    vi.useRealTimers();
+  });
 });
