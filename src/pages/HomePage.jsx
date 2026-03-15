@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import GameExperience from '../App.jsx';
-import SEO, { SITE_URL } from '../components/SEO.jsx';
+import SEO from '../components/SEO.jsx';
+import { SITE_NAME, toAbsoluteUrl } from '../config/site.js';
 
 const faqPreviewItems = [
   {
@@ -21,8 +22,10 @@ export default function HomePage() {
   const webAppJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'Backgammon',
-    url: `${SITE_URL}/`,
+    name: SITE_NAME,
+    url: toAbsoluteUrl('/'),
+    '@id': toAbsoluteUrl('/#website'),
+    mainEntityOfPage: toAbsoluteUrl('/'),
     description:
       'Play backgammon online for free against the computer in your browser. No sign-up, no download, and local save support for quick practice.',
     applicationCategory: 'GameApplication',

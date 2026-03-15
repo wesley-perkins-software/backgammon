@@ -4,18 +4,18 @@ export default function TermsPage() {
   return (
     <article className="content-page">
       <SEO
-        title="Terms of Service | Backgammon"
+        title="Terms of Service | Play Backgammon"
         description="Read the Terms of Service for this browser-based backgammon website, including acceptable use, disclaimers, and limitations of liability."
         path="/terms"
       />
       <h1>Terms of Service</h1>
       <p>
-        These Terms of Service explain how you may use Backgammon, a browser-based backgammon website. We wrote these terms in plain
+        These Terms of Service explain how you may use Play Backgammon at playbackgammon.net, a browser-based backgammon website. We wrote these terms in plain
         language so they are easy to read and practical to follow. By accessing or using this site, you agree to these terms. If you do not
         agree, please do not use the site.
       </p>
       <p>
-        Backgammon is designed as a lightweight game experience that runs in your browser, with supporting pages like rules, strategy,
+        Play Backgammon is designed as a lightweight game experience that runs in your browser, with supporting pages like rules, strategy,
         and FAQ content. These terms are intended to set clear expectations about acceptable use and service limitations.
       </p>
 
@@ -35,7 +35,7 @@ export default function TermsPage() {
 
       <h2>Use of the site</h2>
       <p>
-        Backgammon is provided for normal, personal use as an online game and learning resource. You agree not to misuse the site. For
+        Play Backgammon is provided for normal, personal use as an online game and learning resource. You agree not to misuse the site. For
         example, you agree not to:
       </p>
       <ul>
@@ -51,7 +51,7 @@ export default function TermsPage() {
 
       <h2>Browser-based gameplay and local save behavior</h2>
       <p>
-        Backgammon runs in your browser. Your current game may be saved on your device so it can continue between visits in the same browser.
+        Play Backgammon runs in your browser. Your current game may be saved on your device so it can continue between visits in the same browser.
       </p>
       <p>
         Because saved data stays on your device, it may be removed if you clear site data, use private browsing, reset your browser,
@@ -78,7 +78,7 @@ export default function TermsPage() {
 
       <h2>Limitation of liability</h2>
       <p>
-        To the fullest extent allowed by law, Backgammon and its operators are not liable for indirect, incidental, special,
+        To the fullest extent allowed by law, Play Backgammon and its operators are not liable for indirect, incidental, special,
         consequential, or punitive damages, or for loss of data, loss of use, or loss of goodwill resulting from your use of the site.
       </p>
       <p>
@@ -116,6 +116,12 @@ export default function TermsPage() {
       </p>
       <p>
         Your use of third-party tools or links, if present, may also be subject to those third parties&apos; own terms and privacy policies.
+      </p>
+
+
+      <h2>Contact</h2>
+      <p>
+        For Terms-related questions, contact us through playbackgammon.net.
       </p>
 
       <h2>Changes to the service</h2>

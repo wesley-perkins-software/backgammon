@@ -1,16 +1,10 @@
 import { Helmet } from 'react-helmet-async';
+import { SITE_NAME, toAbsoluteUrl } from '../config/site.js';
 
-const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
-const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '');
-export const SITE_URL = configuredSiteUrl || fallbackOrigin;
-
-function resolveCanonical(path) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${SITE_URL}${normalizedPath}`;
-}
+export { SITE_URL } from '../config/site.js';
 
 export default function SEO({ title, description, path, jsonLd }) {
-  const canonical = resolveCanonical(path);
+  const canonical = toAbsoluteUrl(path);
 
   return (
     <Helmet>
@@ -20,8 +14,11 @@ export default function SEO({ title, description, path, jsonLd }) {
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
+      <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:url" content={canonical} />
       <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
       {jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} /> : null}
     </Helmet>
   );

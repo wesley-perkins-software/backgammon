@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://example.com/</loc></url>
-  <url><loc>https://example.com/rules</loc></url>
-  <url><loc>https://example.com/strategy</loc></url>
-  <url><loc>https://example.com/faq</loc></url>
-  <url><loc>https://example.com/glossary</loc></url>
-  <url><loc>https://example.com/single-player-backgammon</loc></url>
-  <url><loc>https://example.com/free-backgammon-online</loc></url>
-  <url><loc>https://example.com/about</loc></url>
-  <url><loc>https://example.com/privacy</loc></url>
+  <url><loc>https://playbackgammon.net/</loc></url>
+  <url><loc>https://playbackgammon.net/rules</loc></url>
+  <url><loc>https://playbackgammon.net/strategy</loc></url>
+  <url><loc>https://playbackgammon.net/faq</loc></url>
+  <url><loc>https://playbackgammon.net/glossary</loc></url>
+  <url><loc>https://playbackgammon.net/single-player-backgammon</loc></url>
+  <url><loc>https://playbackgammon.net/free-backgammon-online</loc></url>
+  <url><loc>https://playbackgammon.net/about</loc></url>
+  <url><loc>https://playbackgammon.net/privacy</loc></url>
+  <url><loc>https://playbackgammon.net/terms</loc></url>
 </urlset>

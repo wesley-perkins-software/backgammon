@@ -4,13 +4,13 @@ export default function AboutPage() {
   return (
     <article className="content-page">
       <SEO
-        title="About Backgammon"
+        title="About Play Backgammon"
         description="Learn what this free browser Backgammon site offers: quick single-player games, clear rules guidance, strategy basics, and a privacy-first design."
         path="/about"
       />
-      <h1>About Backgammon</h1>
+      <h1>About Play Backgammon</h1>
       <p>
-        Backgammon is a free browser game designed for fast, low-friction play. You can start a single-player match in seconds, with no
+        Play Backgammon is a free browser game designed for fast, low-friction play. You can start a single-player match in seconds, with no
         account, no download, and no setup.
       </p>
 
