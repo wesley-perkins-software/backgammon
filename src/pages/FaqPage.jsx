@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO.jsx';
+import { toAbsoluteUrl } from '../config/site.js';
 
 const faqItems = [
   {
@@ -64,6 +65,9 @@ export default function FaqPage() {
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
+    '@id': toAbsoluteUrl('/faq#faqpage'),
+    url: toAbsoluteUrl('/faq'),
+    mainEntityOfPage: toAbsoluteUrl('/faq'),
     mainEntity: faqItems.map((item) => ({
       '@type': 'Question',
       name: item.q,
