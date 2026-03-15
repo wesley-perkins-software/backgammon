@@ -39,13 +39,6 @@ export default function PrivacyPage() {
         Infrastructure providers (such as hosting, content delivery, and analytics tools, if enabled) may process technical request data
         like IP address, browser type, and timestamps to operate and secure the service.
       </p>
-
-      <h2>Children&apos;s privacy</h2>
-      <p>
-        Backgammon is intended for a general audience. If you believe a child has provided personal information through any support
-        channel, contact us so we can review and remove it where appropriate.
-      </p>
-
       <h2>Policy updates</h2>
       <p>
         We may update this Privacy page as features evolve. Material changes should be reflected on this page with updated wording so
