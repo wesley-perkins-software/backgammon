@@ -21,20 +21,34 @@ const faqPreviewItems = [
 export default function HomePage() {
   const webAppJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: SITE_NAME,
-    url: toAbsoluteUrl('/'),
-    '@id': toAbsoluteUrl('/#website'),
-    mainEntityOfPage: toAbsoluteUrl('/'),
-    description:
-      'Play backgammon online for free against the computer in your browser. No sign-up, no download, and local save support for quick practice.',
-    applicationCategory: 'GameApplication',
-    operatingSystem: 'Any',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD'
-    }
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': toAbsoluteUrl('/#website'),
+        url: toAbsoluteUrl('/'),
+        name: SITE_NAME,
+        inLanguage: 'en'
+      },
+      {
+        '@type': 'WebApplication',
+        name: SITE_NAME,
+        url: toAbsoluteUrl('/'),
+        '@id': toAbsoluteUrl('/#webapp'),
+        isPartOf: {
+          '@id': toAbsoluteUrl('/#website')
+        },
+        mainEntityOfPage: toAbsoluteUrl('/'),
+        description:
+          'Play backgammon online for free against the computer in your browser. No sign-up, no download, and local save support for quick practice.',
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'Any',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD'
+        }
+      }
+    ]
   };
 
   return (
@@ -51,6 +65,7 @@ export default function HomePage() {
       </section>
 
       <article className="content-page home-content-stack">
+        <h1>Play Backgammon Online Free in Your Browser</h1>
         <section>
           <h2>Play Backgammon Instantly</h2>
           <p>

@@ -5,6 +5,7 @@ import FaqPage from '../pages/FaqPage.jsx';
 import FreeBackgammonPage from '../pages/FreeBackgammonPage.jsx';
 import GlossaryPage from '../pages/GlossaryPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
+import NotFoundPage from '../pages/NotFoundPage.jsx';
 import PrivacyPage from '../pages/PrivacyPage.jsx';
 import RulesPage from '../pages/RulesPage.jsx';
 import SinglePlayerPage from '../pages/SinglePlayerPage.jsx';
@@ -26,7 +27,7 @@ export default function AppRouter() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
-          <Route path="*" element={<HomePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
