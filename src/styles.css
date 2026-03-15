@@ -185,7 +185,7 @@ button:focus-visible {
   --layout-column-gap: clamp(0.38rem, 0.7vw, 0.6rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: 0;
+  row-gap: 0.32rem;
   align-items: start;
   min-width: 0;
 }
@@ -196,6 +196,7 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr) var(--off-rail-width);
   column-gap: var(--layout-column-gap);
   align-items: start;
+  row-gap: 0.32rem;
 }
 
 .board-wrapper,
@@ -203,9 +204,6 @@ button:focus-visible {
   grid-column: 1;
 }
 
-.board-ui-row {
-  margin-top: 0.35rem;
-}
 
 .board-centered-status-controls {
   width: 100%;
@@ -368,7 +366,7 @@ button:focus-visible {
   grid-template-columns: 1fr var(--bar-column-width) 1fr;
   grid-template-rows: minmax(182px, 1fr) var(--board-center-gap) minmax(182px, 1fr);
   column-gap: 0.42rem;
-  row-gap: 0;
+  row-gap: 0.32rem;
   padding: 0.62rem;
   border-radius: 1rem;
   border: 4px solid #3a2618;
@@ -1124,8 +1122,8 @@ button:focus-visible {
 }
 
 @media (max-width: 760px) {
-  .board-ui-row {
-    margin-top: 0.26rem;
+  .board-row {
+    row-gap: 0.26rem;
   }
 
   .pip-row {
