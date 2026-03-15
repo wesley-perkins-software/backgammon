@@ -1,6 +1,5 @@
 import SEO from './components/SEO.jsx';
 import BoardSurface from './components/board/BoardSurface.jsx';
-import DebugPanel from './components/board/DebugPanel.jsx';
 import useGameController from './hooks/useGameController.js';
 import * as defaultClock from './platform/clock.js';
 import * as defaultMedia from './platform/media.js';
@@ -27,16 +26,6 @@ export default function App({ showSeo = true, seoPath = '/', seoTitle = 'Play Ba
       )}
 
       <BoardSurface {...controller} />
-
-      <DebugPanel
-        debugOpen={controller.game.dev.debugOpen}
-        dieA={controller.game.dev.dieA}
-        dieB={controller.game.dev.dieB}
-        canPlayerRoll={controller.canPlayerRoll}
-        onToggle={controller.toggleDebug}
-        onUpdateDie={controller.updateDebugDie}
-        onRollWithDice={() => controller.handleRoll([controller.game.dev.dieA, controller.game.dev.dieB])}
-      />
     </section>
   );
 }

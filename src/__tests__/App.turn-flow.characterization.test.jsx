@@ -56,18 +56,16 @@ describe('App turn-flow characterization', () => {
 
   it('set dice + roll follows forced dice values in status text', async () => {
     const user = userEvent.setup();
-    render(<App showSeo={false} showHeader={false} />);
+    const random = {
+      rollDie1to6: vi
+        .fn()
+        .mockReturnValueOnce(6)
+        .mockReturnValueOnce(5)
+    };
 
-    await user.click(screen.getByRole('button', { name: 'Toggle debug panel' }));
+    render(<App showSeo={false} showHeader={false} adapters={{ random }} />);
 
-    const die1Input = screen.getByLabelText('Die 1');
-    const die2Input = screen.getByLabelText('Die 2');
-    await user.clear(die1Input);
-    await user.type(die1Input, '6');
-    await user.clear(die2Input);
-    await user.type(die2Input, '5');
-
-    await user.click(screen.getByRole('button', { name: 'Set Dice + Roll' }));
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }));
 
     await waitFor(() => {
       expect(screen.getAllByText(/rolled 6 and 5/i).length).toBeGreaterThan(0);
@@ -79,10 +77,16 @@ describe('App turn-flow characterization', () => {
     seedNoMovesOnRollScenario();
 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<App showSeo={false} showHeader={false} />);
+    const random = {
+      rollDie1to6: vi
+        .fn()
+        .mockReturnValueOnce(6)
+        .mockReturnValueOnce(5)
+    };
 
-    await user.click(screen.getByRole('button', { name: 'Toggle debug panel' }));
-    await user.click(screen.getByRole('button', { name: 'Set Dice + Roll' }));
+    render(<App showSeo={false} showHeader={false} adapters={{ random }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }));
 
     await vi.advanceTimersByTimeAsync(1000);
 
