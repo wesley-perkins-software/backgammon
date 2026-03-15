@@ -17,6 +17,7 @@ import * as defaultMedia from '../platform/media.js';
 import * as defaultRandom from '../platform/random.js';
 import * as defaultStorage from '../platform/storage.js';
 import { clearSavedGameState, loadGameState, saveGameState } from '../services/persistence.js';
+import { trackCheckerMove, trackNewGame, trackRollDice, trackUndoMove } from '../analytics.js';
 import {
   analyzePathChoices,
   buildMoveSequenceOption,
@@ -418,7 +419,29 @@ export default function useGameController({ clock = defaultClock, media = defaul
       setMovingChecker(null);
       setIsAnimatingMove(false);
     }
-    setGame((prev) => (prev !== stateAtMove ? prev : pushUndoState(prev, applyMoveSequence(prev, moves))));
+
+    const firstMove = moves[0];
+    const finalMove = moves[moves.length - 1];
+    const totalDieValue = moves.reduce((sum, move) => sum + move.dieUsed, 0);
+    const isHit = moves.some((move) => move.hit);
+
+    setGame((prev) => {
+      if (prev !== stateAtMove) return prev;
+      const committed = applyMoveSequence(prev, moves);
+      // Fire once at committed state update so path-choice/internal steps only emit one human move event.
+      if (stateAtMove.currentPlayer === PLAYER_A && firstMove && finalMove) {
+        trackCheckerMove({
+          from_point: firstMove.from,
+          to_point: finalMove.to,
+          die_value: totalDieValue,
+          is_hit: isHit,
+          is_bear_off: finalMove.to === 'off',
+          from_bar: firstMove.from === 'bar',
+          remaining_dice_count: committed.dice.remaining.length
+        });
+      }
+      return pushUndoState(prev, committed);
+    });
     setHiddenHitCheckers([]);
     setPendingBarHits({ A: 0, B: 0 });
   }
@@ -493,6 +516,8 @@ export default function useGameController({ clock = defaultClock, media = defaul
     if (isAnimatingMove) return;
     resetFlowState();
     setIsEndGameOverlayOpen(false);
+    // Fire only when the user starts a fresh game from the New Game control.
+    trackNewGame();
     setGame((prev) => pushUndoState(prev, createInitialState()));
   }
   function handleResetPosition() {
@@ -505,7 +530,12 @@ export default function useGameController({ clock = defaultClock, media = defaul
     if (isAnimatingMove) return;
     resetFlowState();
     setIsEndGameOverlayOpen(false);
-    setGame((prev) => undo(prev));
+    setGame((prev) => {
+      if (!prev.undoStack.length) return prev;
+      // Fire only when Undo actually pops state, preventing no-op click tracking.
+      trackUndoMove();
+      return undo(prev);
+    });
   }
   function clearSavedGame() {
     if (isAnimatingMove) return;
@@ -565,6 +595,10 @@ export default function useGameController({ clock = defaultClock, media = defaul
 
   function handleRoll(forced = null) {
     if ((!forced && !canPlayerRoll) || isAnimatingMove || isAnyRollAnimationRunning || isOpeningRollSequenceRunning || (isComputerTurn && !forced)) return;
+    if (!forced) {
+      // Fire when the human click successfully initiates a dice roll sequence.
+      trackRollDice();
+    }
     if (gamePhase === 'OPENING_ROLL') return void runOpeningRollSequence(forced);
     const d1 = forced?.[0] ?? random.rollDie1to6();
     const d2 = forced?.[1] ?? random.rollDie1to6();
