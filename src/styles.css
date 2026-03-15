@@ -185,7 +185,7 @@ button:focus-visible {
   --layout-column-gap: clamp(0.38rem, 0.7vw, 0.6rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: 0.35rem;
+  row-gap: 0;
   align-items: start;
   min-width: 0;
 }
@@ -201,6 +201,10 @@ button:focus-visible {
 .board-wrapper,
 .board-centered-status-controls {
   grid-column: 1;
+}
+
+.board-ui-row {
+  margin-top: 0.35rem;
 }
 
 .board-centered-status-controls {
@@ -1120,8 +1124,8 @@ button:focus-visible {
 }
 
 @media (max-width: 760px) {
-  .game-layout {
-    row-gap: 0.26rem;
+  .board-ui-row {
+    margin-top: 0.26rem;
   }
 
   .pip-row {
