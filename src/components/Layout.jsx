@@ -6,7 +6,7 @@ export default function Layout({ children }) {
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="site-header-inner">
-          <Link to="/" className="site-title">Play Backgammon</Link>
+          <Link to="/" className="site-title">playbackgammon.net</Link>
           <nav aria-label="Primary navigation" className="site-nav">
             <NavLink to="/" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
             <NavLink to="/rules" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>Rules</NavLink>
