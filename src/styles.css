@@ -853,10 +853,12 @@ button:focus-visible {
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  transition:
-    left var(--move-step-ms, 210ms) linear,
-    top var(--move-step-ms, 210ms) linear;
-  will-change: left, top;
+  transition: transform var(--move-step-ms, 220ms) ease-out;
+  will-change: transform;
+}
+
+.moving-checker.is-moving {
+  transform: translate(calc(-50% + var(--move-dx, 0px)), calc(-50% + var(--move-dy, 0px)));
 }
 
 .selected,
